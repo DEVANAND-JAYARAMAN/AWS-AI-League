@@ -1,7 +1,7 @@
 import logging
 
+from agents.first_agent import create_agent
 from config.logging_config import setup_logging
-from config.settings import PROJECT_ROOT
 
 
 def main():
@@ -9,12 +9,15 @@ def main():
 
     logger = logging.getLogger("aws-ai-league")
 
-    logger.info("AWS AI League infrastructure initialized")
-    logger.info(f"Project root: {PROJECT_ROOT}")
+    logger.info("Starting AWS AI League project")
+
+    agent = create_agent()
 
     print("\n⚽ AWS AI League - Agentic Football")
-    print("Infrastructure ready!")
-    print("Next: Building our first agent.\n")
+    print("First Strands agent created successfully!")
+    print(f"Agent type: {type(agent)}")
+
+    print("\nNext step: Connect a model provider on the personal laptop.\n")
 
 
 if __name__ == "__main__":
