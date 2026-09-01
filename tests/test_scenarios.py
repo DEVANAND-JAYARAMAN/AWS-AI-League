@@ -17,7 +17,7 @@ def run_scenario(name, scenario_function):
     decision = make_decision(game_state)
 
     print(f"\nPossession: {game_state.possession}")
-    print(f"Action: {decision.action}")
+    print(f"Action: {decision.action.value}")
     print(f"Target: {decision.target_player_id}")
     print(f"Confidence: {decision.confidence}")
     print(f"Reason: {decision.reason}")

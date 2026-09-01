@@ -5,20 +5,18 @@ from config.logging_config import setup_logging
 
 
 def main():
-    setup_logging()
 
-    logger = logging.getLogger("aws-ai-league")
+    run_test(
+        "Striker - Attacking Pressure",
+        create_attacking_scenario,
+    )
 
-    logger.info("Starting AWS AI League project")
+    run_test(
+        "Striker - Defensive Situation",
+        create_defensive_scenario,
+    )
 
-    agent = create_agent()
-
-    print("\n⚽ AWS AI League - Agentic Football")
-    print("First Strands agent created successfully!")
-    print(f"Agent type: {type(agent)}")
-
-    print("\nNext step: Connect a model provider on the personal laptop.\n")
-
-
-if __name__ == "__main__":
-    main()
+    run_test(
+        "Striker - Clear Shooting Opportunity",
+        create_shooting_scenario,
+    )

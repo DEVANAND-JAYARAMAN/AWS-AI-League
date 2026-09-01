@@ -167,3 +167,110 @@ def create_defensive_scenario() -> GameState:
 
         possession="OPPONENT_TEAM",
     )
+
+def create_midfielder_pass_scenario() -> GameState:
+    """
+    Creates a scenario where the midfielder has the ball
+    and the striker is clearly open for a forward pass.
+    """
+
+    return GameState(
+        ball_position=Position(x=60, y=40),
+
+        our_team=[
+            Player(
+                player_id="goalkeeper",
+                role="GOALKEEPER",
+                position=Position(x=5, y=50),
+            ),
+            Player(
+                player_id="defender",
+                role="DEFENDER",
+                position=Position(x=30, y=45),
+            ),
+            Player(
+                player_id="midfielder",
+                role="MIDFIELDER",
+                position=Position(x=60, y=40),
+            ),
+            Player(
+                player_id="striker",
+                role="STRIKER",
+                position=Position(x=82, y=50),
+            ),
+        ],
+
+        opponent_team=[
+            Player(
+                player_id="opponent_1",
+                role="DEFENDER",
+                position=Position(x=55, y=55),
+            ),
+            Player(
+                player_id="opponent_2",
+                role="DEFENDER",
+                position=Position(x=65, y=25),
+            ),
+            Player(
+                player_id="opponent_3",
+                role="MIDFIELDER",
+                position=Position(x=45, y=35),
+            ),
+        ],
+
+        possession="OUR_TEAM",
+    )
+
+
+def create_shooting_scenario() -> GameState:
+    """
+    Creates a scenario where the striker has a
+    clear shooting opportunity.
+    """
+
+    return GameState(
+        ball_position=Position(x=82, y=50),
+
+        our_team=[
+            Player(
+                player_id="goalkeeper",
+                role="GOALKEEPER",
+                position=Position(x=5, y=50),
+            ),
+            Player(
+                player_id="defender",
+                role="DEFENDER",
+                position=Position(x=40, y=45),
+            ),
+            Player(
+                player_id="midfielder",
+                role="MIDFIELDER",
+                position=Position(x=70, y=40),
+            ),
+            Player(
+                player_id="striker",
+                role="STRIKER",
+                position=Position(x=82, y=50),
+            ),
+        ],
+
+        opponent_team=[
+            Player(
+                player_id="opponent_1",
+                role="DEFENDER",
+                position=Position(x=70, y=40),
+            ),
+            Player(
+                player_id="opponent_2",
+                role="DEFENDER",
+                position=Position(x=72, y=60),
+            ),
+            Player(
+                player_id="opponent_3",
+                role="MIDFIELDER",
+                position=Position(x=60, y=45),
+            ),
+        ],
+
+        possession="OUR_TEAM",
+    )
