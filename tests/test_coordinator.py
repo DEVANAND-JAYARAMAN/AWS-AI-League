@@ -2,6 +2,7 @@ from agents.coordinator import AgentCoordinator
 
 from simulation.sample_scenario import (
     create_attacking_scenario,
+    create_defender_press_scenario,
     create_defensive_scenario,
     create_midfielder_pass_scenario,
     create_shooting_scenario,
@@ -27,8 +28,12 @@ def run_test(
 
     for player_id, decision in decisions.items():
 
+        tp = decision.target_position
+
         print(f"\nAgent: {player_id}")
         print(f"Action: {decision.action.value}")
+        print(f"Target Player: {decision.target_player_id}")
+        print(f"Target Position: {f'({tp.x}, {tp.y})' if tp else None}")
         print(f"Confidence: {decision.confidence}")
         print(f"Reason: {decision.reason}")
 
@@ -38,6 +43,11 @@ def main():
     run_test(
         "Coordinator - Attacking Pressure",
         create_attacking_scenario,
+    )
+
+    run_test(
+        "Coordinator - Defensive Pressure",
+        create_defender_press_scenario,
     )
 
     run_test(

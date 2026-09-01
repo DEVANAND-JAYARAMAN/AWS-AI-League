@@ -4,7 +4,7 @@ from simulation.decision import (
     FootballAction,
     FootballDecision,
 )
-from simulation.game_state import GameState
+from simulation.game_state import GameState, Position
 from tools.decision_tools import (
     find_closest_player,
     get_distance,
@@ -45,6 +45,7 @@ class MidfielderAgent(BaseFootballAgent):
             return FootballDecision(
                 action=FootballAction.MOVE,
                 target_player_id=None,
+                target_position=Position(x=40, y=50),
                 confidence=0.75,
                 reason=(
                     "The opponent has possession, so move into "
@@ -106,6 +107,7 @@ class MidfielderAgent(BaseFootballAgent):
         return FootballDecision(
             action=FootballAction.MOVE,
             target_player_id=None,
+            target_position=Position(x=55, y=50),
             confidence=0.65,
             reason=(
                 "Move into a balanced position to support both "

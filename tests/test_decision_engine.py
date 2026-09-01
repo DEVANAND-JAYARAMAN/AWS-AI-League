@@ -10,8 +10,11 @@ def main():
 
     print("\n⚽ Football Decision Engine")
 
+    tp = decision.target_position
+
     print(f"\nAction: {decision.action.value}")
     print(f"Target Player: {decision.target_player_id}")
+    print(f"Target Position: {f'({tp.x}, {tp.y})' if tp else None}")
     print(f"Confidence: {decision.confidence}")
     print(f"Reason: {decision.reason}")
 

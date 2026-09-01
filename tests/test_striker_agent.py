@@ -24,7 +24,10 @@ def run_test(
 
     decision = striker_agent.decide(game_state)
 
+    tp = decision.target_position
+
     print(f"\nAction: {decision.action.value}")
+    print(f"Target Position: {f'({tp.x}, {tp.y})' if tp else None}")
     print(f"Confidence: {decision.confidence}")
     print(f"Reason: {decision.reason}")
 

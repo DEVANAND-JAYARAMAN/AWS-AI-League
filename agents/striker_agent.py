@@ -5,7 +5,7 @@ from simulation.decision import (
     FootballDecision,
 )
 from simulation.field import OPPONENT_GOAL
-from simulation.game_state import GameState
+from simulation.game_state import GameState, Position
 from tools.decision_tools import find_closest_player, get_distance
 
 
@@ -49,6 +49,7 @@ class StrikerAgent(BaseFootballAgent):
             return FootballDecision(
                 action=FootballAction.MOVE,
                 target_player_id=None,
+                target_position=Position(x=55, y=50),
                 confidence=0.70,
                 reason=(
                     "The opponent has possession, so reposition "
@@ -91,6 +92,7 @@ class StrikerAgent(BaseFootballAgent):
         return FootballDecision(
             action=FootballAction.MOVE,
             target_player_id=None,
+            target_position=Position(x=85, y=50),
             confidence=0.65,
             reason=(
                 "Move into a better attacking position to create "
