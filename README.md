@@ -1,25 +1,370 @@
-creating a Python virtual environment:
+# AWS AI League – Agentic Football
 
+A small, **fully deterministic** multi-agent system that decides what a
+football (soccer) team should do in any given moment of a match, then
+simulates and scores the result.
+
+The project is built so that a real LLM-driven agent layer (AWS Strands +
+Amazon Bedrock) can be added *later* without rewriting the football
+logic. Today everything runs **locally** with:
+
+* no AWS account or credentials
+* no Amazon Bedrock calls
+* no API keys
+* no network calls
+* no randomness
+
+Run it twice with the same input and you get exactly the same output.
+
+---
+
+## 1. The big picture
+
+```
+GameState  (where every player and the ball are, who has possession)
+    |
+    v
+Specialized Agents        one decision per role
+    |  GoalkeeperAgent / DefenderAgent / MidfielderAgent / StrikerAgent
+    v
+AgentCoordinator          collects all four decisions
+    |
+    v
+TeamCoordinator           scores the decisions and picks ONE team action
+    |  (tactical-mode aware: ATTACK / DEFENSE / TRANSITION)
+    v
+Simulation Engine         applies the action, advances all players one tick
+    |
+    v
+Match History             the list of every tick
+    |
+    v
+Match Evaluator           turns the history into readable metrics
+```
+
+On top of that sits a **local agent pipeline** (`strands_agents/`) that
+mirrors the shape of a real Strands agent but calls the tools directly
+instead of asking an LLM.
+
+And on top of *that* sits the **Evaluation Benchmark** (`scenarios/` +
+`evaluation/`) which checks the football brain against a library of
+hand-designed situations.
+
+---
+
+## 2. Core concepts (read this first)
+
+| Term | What it means |
+|---|---|
+| **`Position`** | An `(x, y)` point on the pitch. `x` runs 0–100 from our goal to the opponent goal; `y` runs 0–100 across the width. Defined in `simulation/game_state.py`. |
+| **`Player`** | `player_id`, `role` (`GOALKEEPER` / `DEFENDER` / `MIDFIELDER` / `STRIKER`), and a `Position`. |
+| **`GameState`** | The whole world at one instant: `ball_position`, `our_team` (list of `Player`), `opponent_team`, and `possession` (`"OUR_TEAM"` or `"OPPONENT_TEAM"`). |
+| **`FootballAction`** | The five things an agent can decide to do: `PASS`, `SHOOT`, `PRESS`, `MOVE`, `HOLD_POSITION`. |
+| **`FootballDecision`** | One agent's answer: an `action`, an optional `target_player_id`, an optional `target_position`, a `confidence` (0–1), and a plain-English `reason`. |
+| **Tactical mode** | Derived from possession by the `TeamCoordinator`: we have the ball → `ATTACK`; opponent has the ball → `DEFENSE`; anything else → `TRANSITION`. |
+| **`TeamDecision`** | The team-level result: the chosen `primary_agent`, `primary_action`, the `tactical_mode`, every individual `agent_decisions`, and any detected `conflicts`. |
+
+### How the team picks ONE action
+
+Each agent proposes a decision. The `TeamCoordinator`
+(`simulation/team_coordinator.py`) gives every proposal a score:
+
+```
+final_score = action_priority(mode) + role_relevance_bonus + confidence * 10
+```
+
+* **`action_priority`** depends on the tactical mode. In `ATTACK`,
+  `SHOOT` (100) beats `PASS` (80) beats `MOVE` (60)… In `DEFENSE`,
+  `PRESS` (100) comes first. This term dominates, so a confident
+  goalkeeper wanting to `HOLD_POSITION` can never outrank a striker
+  `SHOOT` in attack.
+* **`role_relevance_bonus`** is a small nudge (max 15) when a role does
+  its natural job (striker shooting, defender pressing).
+* **`confidence * 10`** only separates decisions that are otherwise
+  equal – it can never jump a whole priority tier.
+
+Ties are broken by a fixed per-mode role order, so the result is 100%
+deterministic.
+
+---
+
+## 3. Project layout
+
+```
+agents/                  the football "brain"
+  base_agent.py          BaseFootballAgent (abstract: .decide(game_state))
+  goalkeeper_agent.py    one file per role, pure if/else rules
+  defender_agent.py
+  midfielder_agent.py
+  striker_agent.py
+  coordinator.py         AgentCoordinator: runs all four, then TeamCoordinator
+
+simulation/              the deterministic world
+  game_state.py          Position / Player / GameState
+  decision.py            FootballAction / FootballDecision
+  field.py               OUR_GOAL / OPPONENT_GOAL constants
+  team_coordinator.py    the scoring model above -> TeamDecision
+  tactical_analyzer.py   structured read of a GameState
+  engine.py              FootballSimulationEngine: advance the state one tick
+  dynamics.py            how non-deciding players drift each tick
+  evaluator.py           MatchEvaluator: history -> metrics + report
+  match_runner.py        convenience: scenario -> engine -> evaluate
+  sample_scenario.py     hand-built GameStates used by tests & the benchmark
+
+tools/                   thin JSON-friendly wrappers around the modules above
+  tactical_tools.py      (no football logic of their own)
+  simulation_tools.py
+  evaluation_tools.py
+  decision_tools.py      shared geometry helpers (distance, closest player…)
+
+strands_agents/          local, LLM-free agent adapters
+  tactical_agent.py      TacticalAgentAdapter
+  simulation_agent.py    SimulationAgentAdapter
+  evaluation_agent.py    EvaluationAgentAdapter
+
+utils/
+  serialization.py       domain objects <-> plain dicts
+
+scenarios/               the benchmark scenario library  (see section 6)
+evaluation/              the benchmark runner            (see section 6)
+tests/                   one runnable file per area      (see section 7)
+```
+
+---
+
+## 4. Setup
+
+You need **Python 3.10+** (3.12 is used here).
+
+```powershell
+# 1. create and activate a virtual environment
 python -m venv .venv
+.venv\Scripts\Activate.ps1          # PowerShell on Windows
 
-Activate it using:
+# 2. upgrade pip and install dependencies
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
 
-.venv\Scripts\Activate.ps1
+> The `strands-agents` package is only needed for the *future* Bedrock
+> integration. Nothing in the current code imports it at runtime – the
+> adapters in `strands_agents/` are plain Python.
 
-Check the Python Version using this command: python --version
-Upgrade the pip: python -m pip install --upgrade pip
-Install the Strands: pip install strands-agents
+### A note on emoji output on Windows
 
-## Strands Agent Architecture
+Some scripts print `⚽` / `📊`. If your console raises
+`UnicodeEncodeError`, force UTF-8 first:
 
-The project keeps a fully deterministic football brain as the source of
-truth, and layers a Strands-compatible agent interface on top of it.
+```powershell
+$env:PYTHONIOENCODING = "utf-8"
+```
+
+---
+
+## 5. Running things
+
+Every module is runnable with `python -m <package>.<module>`.
+
+```powershell
+# See the team decision for a few sample situations
+python -m tests.test_team_coordinator
+
+# Run a full multi-tick simulation and print the evaluation report
+python -m tests.test_simulation_engine
+
+# Run the local Strands-style pipeline end to end
+python -m tests.test_strands_pipeline
+
+# Run the evaluation benchmark and print the full report
+python -m evaluation.benchmark_runner
+```
+
+### Using the brain in your own code
+
+```python
+from agents.coordinator import AgentCoordinator
+from simulation.sample_scenario import create_shooting_scenario
+
+game_state = create_shooting_scenario()
+team_decision = AgentCoordinator().get_coordinated_team_decision(game_state)
+
+print(team_decision.tactical_mode)      # "ATTACK"
+print(team_decision.primary_agent)      # "striker"
+print(team_decision.primary_action)     # FootballAction.SHOOT
+print(team_decision.reason)             # human-readable explanation
+```
+
+---
+
+## 6. Evaluation Benchmark
+
+**Goal:** automatically measure how tactically sensible the football
+system is, across many predefined situations, deterministically.
+
+```
+Scenario Library         scenarios/*.py
+      |
+      v
+Initial GameState        reuses simulation/sample_scenario.py
+      |
+      v
+Expected Behaviour       what the CURRENT deterministic rules already do
+      |
+      v
+Existing Pipeline        AgentCoordinator -> coordinate_team_decision
+      |                  (NOT re-implemented – the real code is called)
+      v
+Actual Decision
+      |
+      v
+Scenario Result          expected vs actual  ->  PASS / FAIL + reason
+      |
+      v
+Benchmark Report         overall + per-category accuracy
+```
+
+### What a scenario looks like
+
+`scenarios/scenario_models.py` defines a small, readable dataclass:
+
+```python
+Scenario(
+    scenario_name="Clear Shooting Opportunity",
+    category="ATTACK",                       # ATTACK / DEFENSE / GOALKEEPER / TRANSITION
+    description="Striker is on the ball, close to goal, unmarked.",
+    initial_game_state=create_shooting_scenario(),
+    expected_primary_agent="striker",
+    expected_primary_action="SHOOT",
+    expected_tactical_mode="ATTACK",         # optional extra check
+)
+```
+
+### Two ways a scenario is judged
+
+| `evaluation_mode` | What it checks | Why it exists |
+|---|---|---|
+| `PRIMARY` (default) | the team's `primary_agent` + `primary_action` | the normal case |
+| `INDIVIDUAL` | one named agent's *own* decision (`expected_individual_agent` / `expected_individual_action`) | the goalkeeper is **rarely** the team's primary decision now that the `TeamCoordinator` prioritises outfield actions – but the keeper can still be individually correct (e.g. `PRESS` in an emergency). We check it directly instead of weakening the coordinator. |
+
+Any scenario may also assert `expected_tactical_mode` – this is the main
+point of the **Transition** category.
+
+### The four categories (16 scenarios total)
+
+| Category | Count | Examples |
+|---|---|---|
+| **ATTACK** | 5 | Clear Shooting Opportunity, Open Forward Pass, Attacking Under Pressure, Striker Movement Opportunity, Build-Up Play |
+| **DEFENSE** | 5 | Close Opponent Possession, Opponent Possession Far Away, Defensive Covering, Midfield Defensive Support, High Defensive Pressure |
+| **GOALKEEPER** | 3 | Safe Ball Far From Goal, Opponent Attack Near Goal, Emergency Near Goal |
+| **TRANSITION** | 3 | Our Team Regains Possession (→ ATTACK), Opponent Takes Possession (→ DEFENSE), Opponent Threat Near Goal (→ DEFENSE) |
+
+### The report
+
+`python -m evaluation.benchmark_runner` prints one block per scenario:
+
+```
+Scenario: Clear Shooting Opportunity
+Category: ATTACK
+Mode: PRIMARY
+
+Expected:
+  mode=ATTACK, agent=striker, action=SHOOT
+
+Actual:
+  mode=ATTACK, agent=striker, action=SHOOT
+
+Result: PASS ✅
+------------------------------------------------------------
+```
+
+…followed by a summary:
+
+```
+Total Scenarios: 16
+Passed: 16
+Failed: 0
+Overall Accuracy: 100.0%
+
+Category Results:
+ATTACK      Passed: 5 / 5   Accuracy: 100.0%
+DEFENSE     Passed: 5 / 5   Accuracy: 100.0%
+GOALKEEPER  Passed: 3 / 3   Accuracy: 100.0%
+TRANSITION  Passed: 3 / 3   Accuracy: 100.0%
+```
+
+Accuracy is always `passed / total * 100`, with a guard so an empty run
+reports `0.0%` instead of crashing.
+
+### Design rules the benchmark follows
+
+* **Expected outcomes describe the existing rules.** No agent was
+  changed to make a scenario pass. Where a situation turned out to
+  behave differently than first guessed, the *expectation* was corrected
+  to match the deterministic reality.
+* **No duplicated logic.** The runner calls
+  `AgentCoordinator.get_coordinated_team_decision` – the same code the
+  simulation uses.
+* **Failures are reported, not hidden.** `test_benchmark.py` includes a
+  test that feeds a deliberately wrong expectation and confirms the
+  runner marks it `FAIL`.
+* **Deterministic.** Running the benchmark repeatedly produces byte-for-
+  byte identical reports.
+
+### Why this matters
+
+This is a **measurable baseline taken before any LLM reasoning is
+added**. Once a Bedrock-backed agent layer replaces the fixed rules, the
+same 16 scenarios immediately show whether the LLM matches, beats, or
+regresses against the deterministic system.
+
+### Adding your own scenario
+
+1. Open the file for the category, e.g. `scenarios/attacking_scenarios.py`.
+2. Append a `Scenario(...)` to the list returned by `build_*_scenarios()`.
+   Reuse a `GameState` from `simulation/sample_scenario.py` or build one
+   inline with `GameState` / `Player` / `Position`.
+3. Set the expectation to whatever the current rules actually produce
+   (run the benchmark once to see).
+4. `python -m tests.test_benchmark`.
+
+---
+
+## 7. Tests
+
+There is no pytest requirement – each test file is a plain script with a
+`main()` and can be run directly:
+
+```powershell
+python -m tests.test_team_prioritization    # TeamCoordinator scoring model
+python -m tests.test_team_coordinator       # full agent -> team decision
+python -m tests.test_goalkeeper_agent       # individual agent rules
+python -m tests.test_defender_agent
+python -m tests.test_midfielder_agent
+python -m tests.test_striker_agent
+python -m tests.test_simulation_engine      # multi-tick simulation
+python -m tests.test_match_evaluator        # history -> metrics
+python -m tests.test_strands_pipeline       # local Strands-style pipeline
+python -m tests.test_benchmark              # the evaluation benchmark
+```
+
+`test_benchmark.py` specifically verifies: at least 16 scenarios exist,
+all four categories are present, every scenario yields a valid result,
+the accuracy maths is correct, division-by-zero is handled, the output
+is deterministic, and wrong expectations are caught as failures.
+
+---
+
+## 8. The local Strands agent pipeline
+
+`strands_agents/` mimics a real `strands.Agent` (receive input → select
+and call tools → return a structured result) but with a **fixed tool
+call order** instead of an LLM.
 
 ```
 Strands-Compatible Agent Layer      strands_agents/
-        |                             (TacticalAgentAdapter,
-        v                              SimulationAgentAdapter,
-Tool Wrappers                          EvaluationAgentAdapter)
+        |                             TacticalAgentAdapter
+        v                             SimulationAgentAdapter
+Tool Wrappers                         EvaluationAgentAdapter
         |                            tools/tactical_tools.py
         v                            tools/simulation_tools.py
 Deterministic Football Intelligence  tools/evaluation_tools.py
@@ -28,29 +373,17 @@ Deterministic Football Intelligence  tools/evaluation_tools.py
                                      -> MatchEvaluator
 ```
 
-* The **agent layer** receives a `GameState` (object or serialized dict)
-  and calls tools in a fixed order.
-* The **tools** are thin wrappers - they add no football logic, they call
-  the existing deterministic modules and return JSON-serializable dicts
-  (see `utils/serialization.py`).
-* The **deterministic system** is unchanged and remains authoritative.
+* The **adapters** accept a `GameState` (object *or* serialized dict).
+* The **tools** add no football logic – they call the deterministic
+  modules and return JSON-serializable dicts (`utils/serialization.py`).
+* The **deterministic system** is authoritative and unchanged.
 
-### Step 36 status
+Each adapter has a commented `# Future integration point:` block showing
+exactly where a Bedrock model would plug in.
 
-```
-Local
-Deterministic
-No Amazon Bedrock invocation
-No AWS credentials required
-No network calls
-```
+---
 
-The adapters mirror the shape of a real `strands.Agent`
-(receive input -> select/call tools -> structured result) but call the
-tools directly instead of an LLM. Each adapter module contains a
-commented `# Future integration point:` block.
-
-### Future architecture
+## 9. Roadmap – where Bedrock fits later
 
 ```
 Strands Agent
@@ -62,70 +395,13 @@ Amazon Bedrock Model      <- added in a later step
 Tool Selection            <- the LLM chooses which football tool to call
         |
         v
-Existing Football Tools   <- tools/*_tools.py (unchanged)
+Existing Football Tools   <- tools/*_tools.py  (unchanged)
         |
         v
 Deterministic Simulation  <- still the source of truth
 ```
 
-When Bedrock is connected, only the adapter classes change (swap the
-fixed tool-call order for `strands.Agent(model=..., tools=[...])`); the
-tools and the deterministic system stay exactly as they are.
-
-## Evaluation Benchmark
-
-A local, deterministic benchmark that measures the tactical intelligence
-of the existing football system across a library of predefined
-scenarios.
-
-```
-Predefined Football Scenarios   scenarios/
-        |
-        v
-Agent Decisions                 AgentCoordinator -> coordinate_team_decision
-        |                        (existing pipeline, unchanged)
-        v
-Expected vs Actual Comparison   evaluation/benchmark_runner.py
-        |
-        v
-PASS / FAIL
-        |
-        v
-Accuracy Metrics                overall + per-category (passed / total * 100)
-```
-
-The benchmark currently evaluates four categories:
-
-* **Attack**     - shooting, forward passing, movement, holding under pressure
-* **Defense**    - pressing, covering, defensive support
-* **Goalkeeper** - holding the line, moving to cut the angle, emergency press
-* **Transition** - the tactical mode derived from a change of possession
-
-Each scenario (`scenarios/scenario_models.py`) is judged in one of two
-modes:
-
-* `PRIMARY`    - checks the team's primary agent / primary action.
-* `INDIVIDUAL` - checks one specific agent's own decision. Used for the
-  goalkeeper, which is rarely the team's *primary* decision because the
-  TeamCoordinator uses tactical prioritization.
-
-Scenarios can also assert the expected `tactical_mode`.
-
-Run it:
-
-```powershell
-python -m evaluation.benchmark_runner   # prints the full report
-python -m tests.test_benchmark          # runs the benchmark test suite
-```
-
-Expected outcomes describe what the current deterministic rules already
-do - no agent behaviour was changed to make scenarios pass, and the
-runner reuses the existing coordinator/agent pipeline rather than
-duplicating any decision logic. The benchmark reports failures instead
-of hiding them.
-
-This creates a measurable, deterministic baseline **before** LLM-based
-reasoning is introduced: once a Bedrock-backed agent layer is added, the
-same scenario library can show whether it matches, beats, or regresses
-against the deterministic system.
-
+When Bedrock is connected, **only the adapter classes change** (swap the
+fixed tool-call order for `strands.Agent(model=..., tools=[...])`). The
+tools, the deterministic brain, and the benchmark stay exactly as they
+are – and the benchmark becomes the yardstick for the new agent.
