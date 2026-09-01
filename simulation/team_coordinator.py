@@ -7,6 +7,27 @@ specialized agent. This module takes those raw decisions plus the current
 that describes what the team as a whole should do right now.
 
 No randomness, no LLM calls - everything here is pure deterministic logic.
+
+------------------------------------------------------------------------
+Tactical scoring model (Step 35)
+------------------------------------------------------------------------
+Each agent decision is scored, and the highest score becomes the primary
+team decision:
+
+    final_score = action_priority(mode)
+                + role_relevance_bonus(mode)
+                + decision.confidence * 10
+
+* action_priority  - depends on the tactical MODE. This dominates, so a
+  Striker SHOOT in ATTACK always beats a Goalkeeper HOLD_POSITION no
+  matter how confident the keeper is.
+* role_relevance_bonus - a small nudge (<= the gap between action tiers)
+  when a role does the thing that role is meant to do (striker shooting,
+  defender pressing, ...).
+* confidence * 10 - a secondary factor: it separates decisions that are
+  otherwise equal, but can never jump a whole action tier.
+
+Ties (identical final score) are broken by a fixed per-mode role order.
 """
 
 from dataclasses import dataclass, field
@@ -14,39 +35,84 @@ from typing import Dict
 
 from simulation.decision import FootballAction, FootballDecision
 from simulation.game_state import GameState
-from tools.decision_tools import get_distance
 
 
-# Fixed agent order used as the final deterministic tie-breaker so the
-# result never depends on dict iteration order.
-AGENT_ORDER = ["goalkeeper", "defender", "midfielder", "striker"]
+A = FootballAction
 
+# ----------------------------------------------------------------------
+# 1. Action priority per tactical mode (higher = more important)
+# ----------------------------------------------------------------------
 
-# Action priority per tactical mode (index 0 = most important).
-# The primary team action is the highest-priority action any agent chose.
-_PRIORITY_BY_MODE: Dict[str, list] = {
-    "ATTACK": [
-        FootballAction.SHOOT,
-        FootballAction.PASS,
-        FootballAction.PRESS,
-        FootballAction.HOLD_POSITION,
-        FootballAction.MOVE,
-    ],
-    "DEFENSE": [
-        FootballAction.PRESS,
-        FootballAction.HOLD_POSITION,
-        FootballAction.PASS,
-        FootballAction.SHOOT,
-        FootballAction.MOVE,
-    ],
-    # Transition: keep possession first, then react.
-    "TRANSITION": [
-        FootballAction.PASS,
-        FootballAction.PRESS,
-        FootballAction.SHOOT,
-        FootballAction.HOLD_POSITION,
-        FootballAction.MOVE,
-    ],
+ATTACK_PRIORITY = {
+    A.SHOOT: 100,
+    A.PASS: 80,
+    A.MOVE: 60,
+    A.PRESS: 40,
+    A.HOLD_POSITION: 20,
+}
+
+DEFENSE_PRIORITY = {
+    A.PRESS: 100,
+    A.MOVE: 80,
+    A.HOLD_POSITION: 60,
+    A.PASS: 30,
+    A.SHOOT: 20,
+}
+
+# Transition: keep possession first, then react.
+TRANSITION_PRIORITY = {
+    A.PASS: 100,
+    A.PRESS: 80,
+    A.SHOOT: 70,
+    A.MOVE: 50,
+    A.HOLD_POSITION: 30,
+}
+
+_PRIORITY_BY_MODE = {
+    "ATTACK": ATTACK_PRIORITY,
+    "DEFENSE": DEFENSE_PRIORITY,
+    "TRANSITION": TRANSITION_PRIORITY,
+}
+
+# ----------------------------------------------------------------------
+# 2. Role relevance bonus - deliberately small (max 15) so it can only
+#    separate decisions inside the same action tier, never across tiers.
+# ----------------------------------------------------------------------
+
+_ROLE_BONUS_BY_MODE = {
+    "ATTACK": {
+        ("striker", A.SHOOT): 15,
+        ("midfielder", A.PASS): 10,
+        ("striker", A.MOVE): 8,
+        ("midfielder", A.MOVE): 4,
+    },
+    "DEFENSE": {
+        ("defender", A.PRESS): 15,
+        ("goalkeeper", A.PRESS): 12,   # keeper coming out is an emergency
+        ("defender", A.MOVE): 8,
+        ("goalkeeper", A.MOVE): 4,
+    },
+    "TRANSITION": {
+        ("midfielder", A.PASS): 10,
+        ("striker", A.SHOOT): 8,
+        ("defender", A.PRESS): 8,
+    },
+}
+
+# ----------------------------------------------------------------------
+# 3. Deterministic tie-break order (first listed wins a tie)
+# ----------------------------------------------------------------------
+
+_TIEBREAK_BY_MODE = {
+    "ATTACK": ["striker", "midfielder", "defender", "goalkeeper"],
+    "DEFENSE": ["defender", "goalkeeper", "midfielder", "striker"],
+    "TRANSITION": ["striker", "midfielder", "defender", "goalkeeper"],
+}
+
+_MODE_ADJECTIVE = {
+    "ATTACK": "attacking",
+    "DEFENSE": "defensive",
+    "TRANSITION": "transition",
 }
 
 
@@ -85,27 +151,37 @@ def _determine_tactical_mode(game_state: GameState) -> str:
     return "TRANSITION"
 
 
-def _priority_index(action: FootballAction, mode: str) -> int:
-    """Lower number = higher priority for the given tactical mode."""
-
-    priority = _PRIORITY_BY_MODE.get(mode, _PRIORITY_BY_MODE["ATTACK"])
-    return priority.index(action)
+def _action_priority(action: FootballAction, mode: str) -> int:
+    table = _PRIORITY_BY_MODE.get(mode, ATTACK_PRIORITY)
+    return table.get(action, 0)
 
 
-def _agent_distance_to_ball(
+def _role_bonus(agent_id: str, action: FootballAction, mode: str) -> int:
+    table = _ROLE_BONUS_BY_MODE.get(mode, {})
+    return table.get((agent_id, action), 0)
+
+
+def _tiebreak_rank(agent_id: str, mode: str) -> int:
+    order = _TIEBREAK_BY_MODE.get(mode, _TIEBREAK_BY_MODE["ATTACK"])
+    return order.index(agent_id) if agent_id in order else len(order)
+
+
+def score_decision(
     agent_id: str,
-    game_state: GameState,
+    decision: FootballDecision,
+    mode: str,
 ) -> float:
-    """Distance from the agent's player to the ball (inf if not found)."""
+    """
+    Full tactical score for one agent decision (higher = better).
 
-    for player in game_state.our_team:
-        if player.player_id == agent_id:
-            return get_distance(
-                source=player.position,
-                target=game_state.ball_position,
-            )
+        action_priority + role_bonus + confidence * 10
+    """
 
-    return float("inf")
+    return (
+        _action_priority(decision.action, mode)
+        + _role_bonus(agent_id, decision.action, mode)
+        + decision.confidence * 10
+    )
 
 
 def _detect_conflicts(
@@ -127,8 +203,7 @@ def _detect_conflicts(
 
     if len(pressing) > 1:
         conflicts.append(
-            "Multiple agents want to PRESS: "
-            + ", ".join(sorted(pressing))
+            "Multiple agents want to PRESS: " + ", ".join(sorted(pressing))
         )
 
     return conflicts
@@ -141,33 +216,20 @@ def coordinate_team_decision(
     """
     Build a :class:`TeamDecision` from raw agent decisions + game state.
 
-    Resolution factors, applied in order:
-      1. Tactical mode (selects the action priority table).
-      2. Action priority (highest-priority action wins).
-      3. For PRESS ties: agent closest to the ball wins.
-      4. Otherwise: higher confidence wins.
-      5. Fixed agent order (defender, midfielder, striker) as last resort.
+    Selection is mode-aware, action-priority-aware, role-context-aware,
+    and uses confidence only as a secondary factor. See the module
+    docstring for the scoring model.
     """
 
     mode = _determine_tactical_mode(game_state)
     conflicts = _detect_conflicts(agent_decisions)
 
+    # Rank by score (desc), then by the mode's fixed role order (asc).
     def sort_key(item):
         agent_id, decision = item
-
-        agent_rank = (
-            AGENT_ORDER.index(agent_id)
-            if agent_id in AGENT_ORDER
-            else len(AGENT_ORDER)
-        )
-
         return (
-            _priority_index(decision.action, mode),   # 1. action priority
-            _agent_distance_to_ball(agent_id, game_state)
-            if decision.action == FootballAction.PRESS
-            else 0.0,                                  # 2. PRESS -> closest
-            -decision.confidence,                      # 3. confidence
-            agent_rank,                                # 4. stable order
+            -score_decision(agent_id, decision, mode),
+            _tiebreak_rank(agent_id, mode),
         )
 
     primary_agent, primary_decision = min(
@@ -175,10 +237,14 @@ def coordinate_team_decision(
         key=sort_key,
     )
 
+    action_name = primary_decision.action.value
+    mode_adjective = _MODE_ADJECTIVE.get(mode, mode.lower())
+
     reason = (
         f"Team is in {mode} mode. "
-        f"The {primary_agent} has the most important action "
-        f"({primary_decision.action.value}): {primary_decision.reason}"
+        f"The {primary_agent} {action_name} decision was selected because "
+        f"{action_name} has the highest {mode_adjective} tactical priority, "
+        f"with a confidence of {primary_decision.confidence:.2f}."
     )
 
     return TeamDecision(

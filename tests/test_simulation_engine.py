@@ -117,7 +117,13 @@ def test_supporting_movement():
 
 
 def test_hold_position_progression():
-    """Scenario 2: a scenario that loops on HOLD_POSITION still evolves."""
+    """
+    Scenario 2: a scenario where the striker holds position.
+
+    Step 35: the striker's HOLD_POSITION is no longer promoted to the
+    primary team action in ATTACK mode (MOVE outranks it), and the world
+    keeps evolving across ticks instead of freezing.
+    """
 
     engine = FootballSimulationEngine(
         initial_game_state=create_attacking_scenario()
@@ -129,13 +135,20 @@ def test_hold_position_progression():
     results = engine.run(ticks=4)
 
     actions = [r.team_decision.primary_action.value for r in results]
-    print(f"\nHOLD_POSITION progression actions: {actions}")
+    print(f"\nProgression actions: {actions}")
+
+    striker_decisions = [
+        r.team_decision.agent_decisions["striker"].action.value
+        for r in results
+    ]
 
     defender_end = _player(engine.game_state, "defender").position
 
-    # Primary action stays HOLD_POSITION ...
-    assert actions == ["HOLD_POSITION"] * 4
-    # ... but the world is not frozen: supporting defender moved.
+    # The striker really does hold position ...
+    assert striker_decisions[0] == "HOLD_POSITION"
+    # ... but a HOLD_POSITION is never the team's primary action in ATTACK.
+    assert "HOLD_POSITION" not in actions
+    # ... and the world is not frozen: a supporting player moved.
     assert (defender_end.x, defender_end.y) != defender_start
 
 
