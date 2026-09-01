@@ -72,3 +72,60 @@ When Bedrock is connected, only the adapter classes change (swap the
 fixed tool-call order for `strands.Agent(model=..., tools=[...])`); the
 tools and the deterministic system stay exactly as they are.
 
+## Evaluation Benchmark
+
+A local, deterministic benchmark that measures the tactical intelligence
+of the existing football system across a library of predefined
+scenarios.
+
+```
+Predefined Football Scenarios   scenarios/
+        |
+        v
+Agent Decisions                 AgentCoordinator -> coordinate_team_decision
+        |                        (existing pipeline, unchanged)
+        v
+Expected vs Actual Comparison   evaluation/benchmark_runner.py
+        |
+        v
+PASS / FAIL
+        |
+        v
+Accuracy Metrics                overall + per-category (passed / total * 100)
+```
+
+The benchmark currently evaluates four categories:
+
+* **Attack**     - shooting, forward passing, movement, holding under pressure
+* **Defense**    - pressing, covering, defensive support
+* **Goalkeeper** - holding the line, moving to cut the angle, emergency press
+* **Transition** - the tactical mode derived from a change of possession
+
+Each scenario (`scenarios/scenario_models.py`) is judged in one of two
+modes:
+
+* `PRIMARY`    - checks the team's primary agent / primary action.
+* `INDIVIDUAL` - checks one specific agent's own decision. Used for the
+  goalkeeper, which is rarely the team's *primary* decision because the
+  TeamCoordinator uses tactical prioritization.
+
+Scenarios can also assert the expected `tactical_mode`.
+
+Run it:
+
+```powershell
+python -m evaluation.benchmark_runner   # prints the full report
+python -m tests.test_benchmark          # runs the benchmark test suite
+```
+
+Expected outcomes describe what the current deterministic rules already
+do - no agent behaviour was changed to make scenarios pass, and the
+runner reuses the existing coordinator/agent pipeline rather than
+duplicating any decision logic. The benchmark reports failures instead
+of hiding them.
+
+This creates a measurable, deterministic baseline **before** LLM-based
+reasoning is introduced: once a Bedrock-backed agent layer is added, the
+same scenario library can show whether it matches, beats, or regresses
+against the deterministic system.
+
