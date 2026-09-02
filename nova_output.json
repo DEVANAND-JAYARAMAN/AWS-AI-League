@@ -1,0 +1,1 @@
+{"output":{"message":{"content":[{"text":"Nova Pro connection successful"}],"role":"assistant"}},"stopReason":"end_turn","usage":{"inputTokens":15,"outputTokens":5,"totalTokens":20,"cacheReadInputTokenCount":0,"cacheWriteInputTokenCount":0}}

@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "You are a football tactical assistant. Reply with exactly: Nova Pro connection successful"
+        }
+      ]
+    }
+  ],
+  "inferenceConfig": {
+    "max_new_tokens": 100,
+    "temperature": 0.0
+  }
+}
