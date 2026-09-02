@@ -74,7 +74,10 @@ class FootballSimulationEngine:
     # Public API
     # ------------------------------------------------------------------
 
-    def step(self) -> SimulationStepResult:
+    def step(
+        self,
+        team_decision: TeamDecision | None = None,
+    ) -> SimulationStepResult:
         """
         Run one tick:
 
@@ -83,20 +86,25 @@ class FootballSimulationEngine:
         3. Apply the primary team action to a fresh copy of the state.
         4. Apply simulation dynamics (supporting players move a little).
         5. Store and return the state transition.
+
+        If ``team_decision`` is supplied (e.g. by the hybrid match
+        simulator) it is executed directly and steps 1-2 are skipped. With
+        no argument the engine behaves exactly as before.
         """
 
         self.tick_number += 1
 
         state_before = copy.deepcopy(self.game_state)
 
-        agent_decisions = self.coordinator.get_team_decisions(
-            self.game_state
-        )
+        if team_decision is None:
+            agent_decisions = self.coordinator.get_team_decisions(
+                self.game_state
+            )
 
-        team_decision = coordinate_team_decision(
-            game_state=self.game_state,
-            agent_decisions=agent_decisions,
-        )
+            team_decision = coordinate_team_decision(
+                game_state=self.game_state,
+                agent_decisions=agent_decisions,
+            )
 
         # Work on a copy so a half-applied update can never corrupt the
         # live state, and scenario objects stay untouched.
@@ -141,7 +149,13 @@ class FootballSimulationEngine:
 
         action = team_decision.primary_action.value
         agent_id = team_decision.primary_agent
-        decision = team_decision.agent_decisions[agent_id]
+        decision = team_decision.agent_decisions.get(agent_id)
+
+        if decision is None:
+            # An externally supplied decision without a matching per-agent
+            # entry: nothing to execute for the primary agent, but the
+            # supporting players still evolve via apply_dynamics().
+            return
 
         if action == "MOVE":
             self._apply_move(state, agent_id, decision)

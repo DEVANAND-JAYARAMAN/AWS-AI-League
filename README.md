@@ -593,3 +593,68 @@ Mode agreement is consistently high (both systems read possession the
 same way); action agreement is lower, which is exactly the kind of
 signal this layer exists to surface. Future work will score these
 comparisons against the evaluation benchmark.
+
+### Hybrid Decision Resolver
+
+`agents/hybrid_decision_resolver.py` takes the deterministic decision,
+the Nova Pro recommendation, and the `DecisionComparison`, and produces
+**one** `HybridDecision` (`final_tactical_mode / final_agent /
+final_action / final_confidence / decision_source / agreement_type /
+reason`). It is deterministic and reproducible – identical inputs always
+give an identical result – and never mutates its inputs.
+
+| Agreement | Rule | `decision_source` |
+|---|---|---|
+| `FULL_AGREEMENT` | take the shared decision; confidence nudged up (avg + 0.05, capped at 1.0) | `AGREEMENT` |
+| `PARTIAL_AGREEMENT` | same mode, different agent/action → pick the higher **tactical action priority** (reusing the `TeamCoordinator` priority tables), confidence as the tie-breaker | `HYBRID_RESOLUTION` |
+| `DISAGREEMENT` | tactical modes conflict → keep the deterministic decision as the safety baseline; the Nova recommendation is reported in `reason`, not discarded | `DETERMINISTIC_FALLBACK` |
+
+```powershell
+python -m tests.test_hybrid_decision_resolver   # offline, no AWS needed
+```
+
+### Hybrid Match Simulation
+
+`simulation/hybrid_match_simulator.py` plays a whole match tick by tick,
+choosing per tick between the deterministic decision and Nova Pro, and
+having the **existing** `FootballSimulationEngine` execute whatever final
+decision was chosen.
+
+```
+per tick:  GameState
+             ├── deterministic TeamCoordinator      (always)
+             └── Amazon Nova Pro                    (mode dependent)
+                      ↓
+             Hybrid Decision Resolver               (HYBRID modes)
+                      ↓
+             final TeamDecision
+                      ↓
+             FootballSimulationEngine.step(decision)   # executes the FINAL
+                      ↓
+             updated GameState → next tick
+```
+
+`SimulationMode`:
+
+| Mode | Nova calls | Final decision |
+|---|---|---|
+| `DETERMINISTIC_ONLY` | none | deterministic (engine default path) |
+| `NOVA_ONLY` | 1/tick | validated Nova recommendation, else deterministic fallback |
+| `HYBRID` | 1/tick | `HybridDecisionResolver` output |
+| `HYBRID_ON_KEY_DECISIONS` | only when the deterministic primary action is a *key* action (`SHOOT` / `PRESS` / `PASS`, configurable) | resolver on key ticks, deterministic on the rest |
+
+`max_ticks` is configurable to keep Bedrock cost down. Invalid or failed
+Nova output never crashes the match – the tick falls back to the
+deterministic decision with `decision_source = DETERMINISTIC_FALLBACK`
+and a `reason`. `HybridMatchResult.statistics` (Nova calls/skips,
+decision-source counts, agreement-type counts, primary actions, final
+tactical modes) is computed from the actual ticks.
+
+The engine gained one optional, backward-compatible parameter –
+`FootballSimulationEngine.step(team_decision=None)`. With no argument it
+behaves exactly as before (used by every existing test); when a
+`TeamDecision` is passed it is executed directly.
+
+```powershell
+python -m tests.test_hybrid_match_simulator   # Tests 2 & 3 make real Nova calls
+```
