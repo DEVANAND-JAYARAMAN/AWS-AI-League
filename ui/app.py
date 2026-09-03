@@ -1,5 +1,5 @@
 """
-Streamlit dashboard for the Agentic Football Tactical AI (Steps 42, 47, 48).
+Streamlit dashboard for the Agentic Football Tactical AI (Steps 42, 47, 48, 51).
 
 A thin presentation layer on top of the existing backend. It runs the
 existing pipeline once per click and then only *reads* the results:
@@ -20,10 +20,11 @@ Run with:
 
 import inspect
 import sys
+from collections import Counter
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 
 _ROOT = Path(__file__).resolve().parent.parent
 if str(_ROOT) not in sys.path:
@@ -44,6 +45,14 @@ from ui.pitch import build_pitch_svg  # noqa: E402
 TEAM_ORDER = ["goalkeeper", "defender", "midfielder", "striker"]
 DETERMINISTIC = SimulationMode.DETERMINISTIC_ONLY.value
 
+ROLE_EMOJI = {
+    "GOALKEEPER": "🧤",
+    "DEFENDER": "🛡️",
+    "MIDFIELDER": "🎯",
+    "STRIKER": "⚡",
+}
+MODE_EMOJI = {"ATTACK": "🔴", "DEFENSE": "🔵", "TRANSITION": "🟡"}
+
 
 # ----------------------------------------------------------------------
 # Backend helpers - discovery + orchestration only, no new logic
@@ -61,7 +70,7 @@ def discover_scenarios() -> dict:
             name.removeprefix("create_").removesuffix("_scenario")
             .replace("_", " ").title()
         )
-        scenarios[label] = name
+        scenarios[label] = {"fn": name, "doc": (fn.__doc__ or "").strip()}
     return dict(sorted(scenarios.items()))
 
 
@@ -93,6 +102,15 @@ def event_for_tick(events: list, tick: int):
     return events[min(tick, len(events)) - 1]
 
 
+def _fmt_target(decision) -> str:
+    if decision.target_player_id:
+        return f"→ {decision.target_player_id}"
+    pos = decision.target_position
+    if pos is not None:
+        return f"({pos.x:.0f}, {pos.y:.0f})"
+    return "—"
+
+
 def agent_status_rows(state_dict: dict) -> list:
     """Per-agent deterministic decisions for a snapshot (pure AgentCoordinator)."""
 
@@ -107,12 +125,15 @@ def agent_status_rows(state_dict: dict) -> list:
         decision = decisions.get(pid)
         if decision is None:
             continue
+        role = roles.get(pid, "?")
         rows.append(
             {
                 "player": pid.capitalize(),
-                "role": roles.get(pid, "?"),
+                "role": role,
+                "emoji": ROLE_EMOJI.get(str(role).upper(), "•"),
                 "action": decision.action.value,
                 "confidence": float(decision.confidence),
+                "target": _fmt_target(decision),
                 "reason": decision.reason,
             }
         )
@@ -135,6 +156,19 @@ def _decision_lines(summary: dict | None) -> str:
         f"- Action: `{summary.get('action', '-')}`\n"
         f"- Confidence: `{_conf(summary.get('confidence'))}`"
     )
+
+
+def _bar(counts: dict, value_label: str):
+    if not counts:
+        st.caption("No data.")
+        return
+    df = pd.DataFrame({value_label: list(counts.values())}, index=list(counts.keys()))
+    st.bar_chart(df, height=240)
+
+
+def _ball_xy(state: dict | None):
+    pos = (state or {}).get("ball_position") or {}
+    return pos.get("x"), pos.get("y")
 
 
 # ----------------------------------------------------------------------
@@ -161,62 +195,74 @@ for key, default in _DEFAULTS.items():
 
 
 # ----------------------------------------------------------------------
-# 1. Header / project identity
+# Header / project identity
 # ----------------------------------------------------------------------
 
 st.title("⚽ Agentic Football Tactical AI")
-st.write(
-    "Agentic Football is a multi-agent tactical simulation where specialised "
-    "football agents coordinate decisions using deterministic reasoning and "
-    "Amazon Nova Pro through Amazon Bedrock."
+st.markdown(
+    "**Not just a football simulator — a multi-agent AI system where four "
+    "deterministic role agents and Amazon Nova Pro collaborate, through a "
+    "Hybrid Decision Resolver, to make tactical decisions every tick.**"
 )
 
 with st.container(border=True):
-    a, b, c, d, e = st.columns([2, 1, 1, 1, 1])
-    a.markdown(
-        "**Agents**  \nGoalkeeper · Defender  \nMidfielder · Striker"
+    cols = st.columns([2.4, 0.4, 1.4, 0.4, 1.6, 0.4, 1.2, 0.4, 1.2])
+    cols[0].markdown(
+        "🧤 Goalkeeper · 🛡️ Defender  \n🎯 Midfielder · ⚡ Striker  \n"
+        "_four specialised agents_"
     )
-    b.markdown("→  \n**Team  \nCoordinator**")
-    c.markdown("→  \n**Hybrid Decision  \nResolver**")
-    d.markdown("→  \n**Simulation**")
-    e.markdown("→  \n**Analytics**")
+    cols[1].markdown("### →")
+    cols[2].markdown("**Team Coordinator**  \n_mode-aware scoring_")
+    cols[3].markdown("### →")
+    cols[4].markdown("**Hybrid Decision Resolver**  \n_deterministic + Nova Pro_")
+    cols[5].markdown("### →")
+    cols[6].markdown("**Simulation**  \n_tick-by-tick_")
+    cols[7].markdown("### →")
+    cols[8].markdown("**Analytics**  \n_timeline + report_")
 
 
 # ----------------------------------------------------------------------
-# 2. Sidebar - simulation controls
+# Sidebar - 1. match setup
 # ----------------------------------------------------------------------
 
 scenarios = discover_scenarios()
 
 with st.sidebar:
-    st.header("Simulation controls")
+    st.header("1 · Match setup")
 
     if not scenarios:
         st.error("No scenarios found in app.core.sample_scenario.")
         st.stop()
 
     scenario_label = st.selectbox("Scenario", list(scenarios.keys()))
-    mode_name = st.selectbox(
+    doc = scenarios[scenario_label]["doc"]
+    if doc:
+        st.caption(doc)
+
+    mode_name = st.radio(
         "Simulation mode",
         [DETERMINISTIC, "HYBRID"],
+        horizontal=True,
         help="HYBRID calls Amazon Nova Pro on Bedrock (needs AWS credentials).",
     )
-    ticks = st.slider("Ticks", min_value=1, max_value=10, value=5)
+    ticks = st.slider("Number of ticks", min_value=1, max_value=10, value=5)
 
     if mode_name == "HYBRID":
         st.info(
-            "HYBRID invokes Amazon Nova Pro per tick. The backend falls back "
-            "to the deterministic decision automatically if AWS is unavailable."
+            "HYBRID invokes Amazon Nova Pro once per tick. The backend falls "
+            "back to the deterministic decision automatically if a call fails."
         )
+    else:
+        st.caption("Deterministic mode runs fully offline — no AWS, no network.")
 
     run_clicked = st.button(
-        "Run simulation", type="primary", use_container_width=True
+        "▶ Run simulation", type="primary", use_container_width=True
     )
 
     st.divider()
     st.caption(
-        "Tick navigation below the pitch only replays stored snapshots - it "
-        "never re-runs the simulation or calls AWS."
+        "Tick navigation on the pitch only replays stored snapshots — it never "
+        "re-runs the simulation and never calls AWS."
     )
 
 if run_clicked:
@@ -224,7 +270,7 @@ if run_clicked:
     with st.spinner(f"Running {ticks}-tick simulation ({mode_name})..."):
         try:
             match, log, analytics = run_simulation(
-                scenarios[scenario_label], mode, ticks
+                scenarios[scenario_label]["fn"], mode, ticks
             )
             st.session_state.latest_match_result = match
             st.session_state.latest_events = log
@@ -255,7 +301,7 @@ if st.session_state.run_error:
     )
 
 if not st.session_state.simulation_completed:
-    st.info("Configure the simulation in the sidebar and click **Run simulation**.")
+    st.info("Configure the match in the sidebar and click **Run simulation**.")
     st.stop()
 
 match = st.session_state.latest_match_result
@@ -274,8 +320,8 @@ final_summary = last_tick.final_decision if last_tick else {}
 
 if is_hybrid:
     st.success(
-        f"**HYBRID mode** — Deterministic Engine  vs  Amazon Nova Pro  →  "
-        f"Hybrid Decision Resolver   ·   Nova Pro calls: "
+        "**HYBRID mode** — Deterministic Engine  vs  Amazon Nova Pro  →  "
+        "Hybrid Decision Resolver   ·   Nova Pro calls: "
         f"**{match.statistics.get('nova_calls', 0)} / {match.total_ticks}**"
     )
 else:
@@ -286,7 +332,7 @@ else:
 
 
 # ----------------------------------------------------------------------
-# 3. Match status
+# 2. Match status
 # ----------------------------------------------------------------------
 
 st.subheader("Match status")
@@ -298,34 +344,52 @@ c4.metric("Final confidence", _conf(final_summary.get("confidence")))
 
 
 # ----------------------------------------------------------------------
-# 4. Football pitch visualization + 5. selected tick decision
+# 3. Live match visualization  (pitch + tick navigation)
 # ----------------------------------------------------------------------
 
-st.subheader("Football pitch")
+st.subheader("Live match visualization")
 
 n = match.total_ticks
 if st.session_state.selected_tick > n:
     st.session_state.selected_tick = n
-st.slider(
-    "Tick  (0 = initial state)",
-    min_value=0,
-    max_value=n,
-    key="selected_tick",
-    help="Replays stored state snapshots. No simulation or AWS call happens here.",
-)
+
+nav_prev, nav_slider, nav_next = st.columns([1, 8, 1])
+if nav_prev.button("◀", use_container_width=True, help="Previous tick"):
+    st.session_state.selected_tick = max(0, st.session_state.selected_tick - 1)
+if nav_next.button("▶", use_container_width=True, help="Next tick"):
+    st.session_state.selected_tick = min(n, st.session_state.selected_tick + 1)
+with nav_slider:
+    st.slider(
+        "Tick  (0 = initial state)",
+        min_value=0,
+        max_value=n,
+        key="selected_tick",
+        help="Replays stored state snapshots. No simulation or AWS call here.",
+    )
+
 tick = st.session_state.selected_tick
 snapshot = snapshot_for_tick(events, tick)
 event = event_for_tick(events, tick)
+
+cur_mode = (event.tactical_mode if event else None) or "—"
+bx, by = _ball_xy(snapshot)
+poss = (snapshot or {}).get("possession", "—")
+
+badge1, badge2, badge3, badge4 = st.columns(4)
+badge1.metric("Tick", f"{tick} / {n}")
+badge2.metric("Tactical mode", f"{MODE_EMOJI.get(cur_mode, '')} {cur_mode}".strip())
+badge3.metric("Possession", poss)
+badge4.metric(
+    "Ball position",
+    f"({bx:.0f}, {by:.0f})" if bx is not None else "—",
+)
 
 pitch_col, info_col = st.columns([3, 2])
 
 with pitch_col:
     if snapshot:
         ball_movement = event.ball_movement if event else None
-        components.html(
-            build_pitch_svg(snapshot, ball_movement),
-            height=540,
-        )
+        st.html(build_pitch_svg(snapshot, ball_movement))
         st.caption(
             "Blue = our agents (GK / DF / MF / ST) · Grey = opponents · "
             "White dot = ball · Dashed yellow arrow = ball movement this tick"
@@ -337,9 +401,8 @@ with info_col:
     with st.container(border=True):
         if event is None:
             st.markdown(f"### Tick {tick} — initial state")
-            poss = (snapshot or {}).get("possession", "-")
             st.markdown(f"Possession: `{poss}`")
-            st.caption("No decision has been taken yet.")
+            st.caption("No decision has been taken yet. Use ▶ to step forward.")
         else:
             final = event.final_decision
             st.markdown(f"### Tick {event.tick}")
@@ -360,34 +423,37 @@ with info_col:
 
 
 # ----------------------------------------------------------------------
-# 6. Agent status (for the selected tick's snapshot)
+# 4. Agent decision panel  (selected tick snapshot)
 # ----------------------------------------------------------------------
 
-st.subheader("Agent status")
+st.subheader("Agent decision panel")
 st.caption(
-    f"Deterministic agent intentions for the tick {tick} snapshot "
-    "(AgentCoordinator is a pure function - no simulation is run)."
+    f"What each specialised agent wants to do in the tick {tick} snapshot. "
+    "AgentCoordinator is a pure function — no simulation is run here."
 )
 rows = agent_status_rows(snapshot)
 cols = st.columns(len(rows) or 1)
 for col, row in zip(cols, rows):
     with col:
         with st.container(border=True):
-            st.markdown(f"**{row['player']}**  \n`{row['role']}`")
+            st.markdown(f"### {row['emoji']} {row['player']}")
+            st.caption(f"`{row['role']}`")
             st.metric(row["action"], _conf(row["confidence"]))
+            st.markdown(f"**Target:** `{row['target']}`")
             st.caption(row["reason"])
 
 
 # ----------------------------------------------------------------------
-# 7. Hybrid AI decision comparison
+# 5. AI decision comparison
 # ----------------------------------------------------------------------
 
-st.subheader("Hybrid AI decision comparison")
+st.subheader("AI decision comparison")
 
 if not is_hybrid:
     st.info(
-        "Amazon Nova Pro was not called because this simulation was run in "
-        "deterministic-only mode."
+        "Deterministic-only run — Amazon Nova Pro was not called, so there is "
+        "nothing to compare. Switch the sidebar mode to **HYBRID** and re-run "
+        "to see Deterministic vs Nova Pro vs Hybrid decisions per tick."
     )
 else:
     cmp_event = event or (events[-1] if events else None)
@@ -395,24 +461,27 @@ else:
         st.warning("No tick data available.")
     else:
         st.caption(
-            f"Showing tick {cmp_event.tick}. "
-            "Deterministic Engine  vs  Amazon Nova Pro  →  Hybrid Decision Resolver."
+            f"Tick {cmp_event.tick} — Deterministic Engine  vs  Amazon Nova Pro  "
+            "→  Hybrid Decision Resolver."
         )
         h1, h2, h3 = st.columns(3)
         with h1:
-            st.markdown("**Deterministic engine**")
-            st.markdown(_decision_lines(cmp_event.deterministic_decision))
+            with st.container(border=True):
+                st.markdown("**⚙️ Deterministic engine**")
+                st.markdown(_decision_lines(cmp_event.deterministic_decision))
         with h2:
-            st.markdown("**Amazon Nova Pro**")
-            if cmp_event.nova_called and cmp_event.nova_recommendation:
-                st.markdown(_decision_lines(cmp_event.nova_recommendation))
-            else:
-                st.markdown(
-                    f"_skipped_ — {cmp_event.nova_skip_reason or 'not called this tick'}"
-                )
+            with st.container(border=True):
+                st.markdown("**🤖 Amazon Nova Pro**")
+                if cmp_event.nova_called and cmp_event.nova_recommendation:
+                    st.markdown(_decision_lines(cmp_event.nova_recommendation))
+                else:
+                    st.markdown(
+                        f"_skipped_ — {cmp_event.nova_skip_reason or 'not called'}"
+                    )
         with h3:
-            st.markdown("**Hybrid final decision**")
-            st.markdown(_decision_lines(cmp_event.final_decision))
+            with st.container(border=True):
+                st.markdown("**✅ Hybrid final decision**")
+                st.markdown(_decision_lines(cmp_event.final_decision))
 
         f1, f2 = st.columns(2)
         f1.metric("Agreement", cmp_event.agreement or "N/A")
@@ -420,24 +489,60 @@ else:
         if cmp_event.reason:
             st.caption(cmp_event.reason)
 
-    with st.expander("Nova Pro usage across the whole match"):
-        st.write(
-            {
-                "nova_calls": match.statistics.get("nova_calls", 0),
-                "nova_skipped": match.statistics.get("nova_skipped", 0),
-                "decision_sources": match.statistics.get("decision_sources", {}),
-                "agreement_types": match.statistics.get("agreement_types", {}),
-            }
-        )
+    stats = match.statistics
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Nova Pro calls", stats.get("nova_calls", 0))
+    m2.metric("Nova Pro skipped", stats.get("nova_skipped", 0))
+    m3.metric("Full agreement", stats.get("agreement_types", {}).get("FULL_AGREEMENT", 0))
+    m4.metric(
+        "Hybrid resolutions",
+        stats.get("decision_sources", {}).get("HYBRID_RESOLUTION", 0),
+    )
 
 
 # ----------------------------------------------------------------------
-# 8. Simulation timeline + 9. match analytics
+# 6. Analytics dashboard
 # ----------------------------------------------------------------------
 
-st.subheader("Timeline & analytics")
-t1, t2 = st.tabs(["Simulation timeline", "Match analytics"])
-with t1:
-    st.code(format_timeline(log), language="text")
-with t2:
-    st.code(format_analytics(analytics), language="text")
+st.subheader("Analytics dashboard")
+
+k1, k2, k3, k4 = st.columns(4)
+k1.metric("Ticks", analytics.total_ticks)
+k2.metric("Ball distance", f"{analytics.ball_distance:.1f}")
+k3.metric("Team distance", f"{analytics.team_distance:.1f}")
+k4.metric("Nova Pro calls", analytics.nova_calls)
+
+d1, d2, d3 = st.columns(3)
+with d1:
+    st.markdown("**Tactical modes**")
+    _bar(analytics.mode_counts, "ticks")
+with d2:
+    st.markdown("**Actions**")
+    _bar(analytics.action_counts, "ticks")
+with d3:
+    st.markdown("**Primary agent**")
+    agent_dist = Counter(
+        t.final_decision.get("agent", "?") for t in match.tick_results
+    )
+    _bar(dict(agent_dist), "ticks")
+
+st.markdown("**Player movement (total distance)**")
+_bar(analytics.player_distance, "distance")
+
+st.markdown("**State evolution — ball position per tick**")
+xs, ys = [], []
+for t in range(0, n + 1):
+    x, y = _ball_xy(snapshot_for_tick(events, t))
+    xs.append(x)
+    ys.append(y)
+st.line_chart(
+    pd.DataFrame({"ball x": xs, "ball y": ys}, index=list(range(0, n + 1))),
+    height=260,
+)
+
+with st.expander("Raw timeline & analytics report"):
+    t1, t2 = st.tabs(["Simulation timeline", "Match analytics report"])
+    with t1:
+        st.code(format_timeline(log), language="text")
+    with t2:
+        st.code(format_analytics(analytics), language="text")
