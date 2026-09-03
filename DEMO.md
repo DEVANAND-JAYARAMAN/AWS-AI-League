@@ -93,6 +93,8 @@ exact expected output). Exit code is non-zero if anything fails.
 streamlit run ui/app.py
 ```
 
+0. Expand **System architecture** at the top for the live pipeline
+   diagram (deterministic path + the opt-in Amazon Nova Pro branch).
 1. Sidebar → **Scenario: Midfielder Pass**, **Mode: DETERMINISTIC_ONLY**,
    **Ticks: 8** → **Run simulation**.
 2. **Match status** cards show the final tactical mode / agent / action /

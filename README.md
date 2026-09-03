@@ -28,6 +28,29 @@ agreement, and analytics breakdowns.
 
 ## 1. The big picture
 
+```mermaid
+flowchart LR
+    GS[["GameState"]]
+    GK[Goalkeeper] --> COORD
+    DF[Defender] --> COORD
+    MF[Midfielder] --> COORD
+    ST[Striker] --> COORD
+    GS --> GK & DF & MF & ST
+    COORD["AgentCoordinator +<br/>TeamCoordinator"] -->|deterministic decision| RES
+    NOVA["Amazon Nova Pro<br/>(Bedrock)"] -.->|HYBRID mode only| RES
+    RES["Hybrid Decision<br/>Resolver"] --> SIM
+    COORD -.->|DETERMINISTIC_ONLY| SIM
+    SIM["Simulation Engine"] --> H[Match history]
+    H --> EV[Match Evaluator]
+    H --> AN["Analytics<br/>app/analytics/"]
+    H --> UI["Streamlit UI<br/>ui/"]
+```
+
+Full diagrams (this flow, a per-tick sequence diagram, and the
+decision-resolution logic) are in [`ARCHITECTURE.md`](ARCHITECTURE.md).
+
+<details><summary>Same picture as ASCII</summary>
+
 ```
 GameState  (where every player and the ball are, who has possession)
     |
@@ -56,6 +79,8 @@ Match History             the list of every tick
     +--> Analytics (app/analytics/)   event log / timeline / aggregated report
     +--> Streamlit UI (ui/)           pitch visualization + dashboards
 ```
+
+</details>
 
 Alongside the runtime sits a **local agent pipeline** (`app/strands/`)
 that mirrors the shape of a real Strands agent but calls the tools

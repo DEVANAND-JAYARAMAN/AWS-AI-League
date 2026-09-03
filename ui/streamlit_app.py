@@ -53,6 +53,41 @@ ROLE_EMOJI = {
 }
 MODE_EMOJI = {"ATTACK": "🔴", "DEFENSE": "🔵", "TRANSITION": "🟡"}
 
+ARCH_DOT = """
+digraph Architecture {
+  rankdir=LR;
+  bgcolor="transparent";
+  node [shape=box, style="rounded,filled", fontname="Helvetica",
+        fontsize=11, color="#8aa0c8", fillcolor="#e8eef9"];
+  edge [color="#8a8a8a", fontname="Helvetica", fontsize=9];
+
+  subgraph cluster_agents {
+    label="Specialised agents (deterministic)";
+    style="rounded"; color="#c8d3e6"; fontname="Helvetica"; fontsize=10;
+    GK [label="Goalkeeper"]; DF [label="Defender"];
+    MF [label="Midfielder"]; ST [label="Striker"];
+  }
+
+  COORD [label="AgentCoordinator\\n+ TeamCoordinator\\n(mode-aware scoring)"];
+  NOVA  [label="Amazon Nova Pro\\nvia Amazon Bedrock", fillcolor="#fde8cf",
+         color="#e0a060"];
+  RESOLVER [label="Hybrid Decision Resolver\\nAGREEMENT / HYBRID_RESOLUTION /\\nDETERMINISTIC_FALLBACK",
+            fillcolor="#e4f1e4", color="#8ac08a"];
+  SIM   [label="FootballSimulationEngine\\nstep(final decision) -> next tick"];
+  ANALYTICS [label="Analytics\\nevent log · timeline · report"];
+  UI [label="Streamlit dashboard\\n(this app)", fillcolor="#f1e4f1",
+      color="#c08ac0"];
+
+  GK -> COORD; DF -> COORD; MF -> COORD; ST -> COORD;
+  COORD -> RESOLVER [label="deterministic decision"];
+  NOVA  -> RESOLVER [label="recommendation\\n(HYBRID mode only)", style=dashed];
+  RESOLVER -> SIM [label="one final TeamDecision"];
+  SIM -> ANALYTICS -> UI;
+  COORD -> SIM [label="DETERMINISTIC_ONLY\\n(resolver + Nova skipped)",
+                style=dotted, constraint=false];
+}
+"""
+
 
 # ----------------------------------------------------------------------
 # Backend helpers - discovery + orchestration only, no new logic
@@ -219,6 +254,14 @@ with st.container(border=True):
     cols[6].markdown("**Simulation**  \n_tick-by-tick_")
     cols[7].markdown("### →")
     cols[8].markdown("**Analytics**  \n_timeline + report_")
+
+with st.expander("System architecture"):
+    st.graphviz_chart(ARCH_DOT)
+    st.caption(
+        "Solid = every run · dashed = Amazon Nova Pro, HYBRID mode only · "
+        "dotted = DETERMINISTIC_ONLY shortcut. The deterministic path is always "
+        "the fallback: an invalid or failed Nova response never blocks a tick."
+    )
 
 
 # ----------------------------------------------------------------------
