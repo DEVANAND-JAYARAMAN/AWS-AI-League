@@ -1,20 +1,28 @@
 # AWS AI League – Agentic Football
 
-A small, **fully deterministic** multi-agent system that decides what a
-football (soccer) team should do in any given moment of a match, then
-simulates and scores the result.
+A multi-agent system that decides what a football (soccer) team should do
+in any given moment of a match, then simulates, scores, and visualises the
+result.
 
-The project is built so that a real LLM-driven agent layer (AWS Strands +
-Amazon Bedrock) can be added *later* without rewriting the football
-logic. Today everything runs **locally** with:
+The **core is fully deterministic** – specialised per-role agents, a
+tactical-scoring team coordinator, a simulation engine, and an evaluation
+benchmark – and runs with **no AWS account, no API keys, no network, no
+randomness**. Run it twice with the same input and you get exactly the
+same output.
 
-* no AWS account or credentials
-* no Amazon Bedrock calls
-* no API keys
-* no network calls
-* no randomness
+On top of that sits an **optional hybrid layer** (`app/ai/`) that adds
+**Amazon Nova Pro** tactical reasoning through **Amazon Bedrock**. It is
+**advisory** and opt-in: nothing calls Bedrock unless you explicitly ask
+for a hybrid mode. If AWS is unavailable, every hybrid path falls back to
+the deterministic decision.
 
-Run it twice with the same input and you get exactly the same output.
+A **Streamlit dashboard** (`ui/`) is the visual front-end: pick a
+scenario, choose deterministic or hybrid mode, run the match, then step
+through it tick-by-tick on a rendered football pitch with full decision,
+agreement, and analytics breakdowns.
+
+> **New here?** Read [`ARCHITECTURE.md`](ARCHITECTURE.md) for the one-page
+> system overview, then [`DEMO.md`](DEMO.md) for a 5-minute guided walk-through.
 
 ---
 
@@ -32,23 +40,28 @@ AgentCoordinator          collects all four decisions
     v
 TeamCoordinator           scores the decisions and picks ONE team action
     |  (tactical-mode aware: ATTACK / DEFENSE / TRANSITION)
+    |
+    |  ---- optional hybrid layer (app/ai/, opt-in) --------------------
+    |    Amazon Nova Pro (Bedrock) proposes a recommendation
+    |    HybridDecisionResolver merges deterministic + Nova -> one decision
+    |    (falls back to deterministic on any failure)
+    |  ----------------------------------------------------------------
     v
-Simulation Engine         applies the action, advances all players one tick
+Simulation Engine         applies the final action, advances all players one tick
     |
     v
 Match History             the list of every tick
     |
-    v
-Match Evaluator           turns the history into readable metrics
+    +--> Match Evaluator       history -> readable metrics
+    +--> Analytics (app/analytics/)   event log / timeline / aggregated report
+    +--> Streamlit UI (ui/)           pitch visualization + dashboards
 ```
 
-On top of that sits a **local agent pipeline** (`app/strands/`) that
-mirrors the shape of a real Strands agent but calls the tools directly
-instead of asking an LLM.
-
-And on top of *that* sits the **Evaluation Benchmark**
+Alongside the runtime sits a **local agent pipeline** (`app/strands/`)
+that mirrors the shape of a real Strands agent but calls the tools
+directly instead of asking an LLM, and the **Evaluation Benchmark**
 (`app/evaluation/`) which checks the football brain against a library of
-hand-designed situations.
+16 hand-designed situations.
 
 ---
 
@@ -128,7 +141,10 @@ app/
     decision_resolver.py HybridDecisionResolver: one final decision
     match_simulator.py   HybridMatchSimulator: tick-by-tick hybrid match
 
-  analytics/             match event logging + timeline (Step 38, WIP)
+  analytics/             match event logging, timeline, final report (see section 12)
+    event_logger.py      MatchEvent per tick + MatchEventLog (JSON)
+    match_timeline.py     replayable play-by-play
+    match_analytics.py    one aggregated MatchAnalytics report
 
   strands/               local, LLM-free Strands-style agent adapters
     tactical_agent.py / simulation_agent.py / evaluation_agent.py
@@ -141,9 +157,17 @@ app/
 
   config/                env.py / settings.py / logging_config.py
 
+ui/                      Streamlit dashboard              (see section 5)
+  app.py                 the dashboard: controls, pitch, decisions, analytics
+  pitch.py               pure-SVG football pitch renderer (no plotting deps)
+
 main.py                  runs the evaluation benchmark
-scripts/run_match.py     run one match, save results to data/match_results/
-tests/                   test_core / test_agents / test_hybrid / test_benchmark
+scripts/
+  run_match.py           run one deterministic match, save to data/match_results/
+  run_hybrid_match.py    run a match + print timeline & analytics (mode arg)
+  run_full_demo.py       end-to-end demo: benchmark + matches -> RESULTS.md
+tests/                   test_core / test_agents / test_hybrid /
+                         test_benchmark / test_analytics
 ```
 
 ---
@@ -202,17 +226,49 @@ $env:PYTHONIOENCODING = "utf-8"
 ```powershell
 # Run the evaluation benchmark and print the full report
 python main.py
-# ...or:  python -m app.app.evaluation.benchmark_runner
+# ...or:  python -m app.evaluation.benchmark_runner
 
 # Run one match and save the result under data/match_results/
 python -m scripts.run_match create_shooting_scenario 10
 
+# Run a match and print the timeline + analytics (Steps 38-40)
+python -m scripts.run_hybrid_match create_midfielder_pass_scenario 8
+# add a mode as the 3rd arg (HYBRID / NOVA_ONLY / ...) to involve Nova Pro
+
+# Run the whole project end-to-end and write RESULTS.md
+python -m scripts.run_full_demo
+
 # Consolidated test suites
 python -m tests.test_core        # core engine, offline
 python -m tests.test_agents      # the four agents, offline
-python -m tests.test_hybrid      # hybrid layer (some cases need AWS)
+python -m tests.test_hybrid      # hybrid layer (offline; live-Nova cases guarded)
 python -m tests.test_benchmark   # 16-scenario benchmark, offline
+python -m tests.test_analytics   # analytics event log / timeline / report, offline
 ```
+
+### Streamlit dashboard (UI)
+
+A visual dashboard sits on top of the existing backend (scenario picker,
+deterministic / hybrid mode, tick count, tactical + agent decisions, hybrid
+AI comparison, timeline and analytics previews).
+
+It also renders a **football pitch visualization** with a tick slider:
+tick 0 is the initial state and each step replays the stored GameState
+snapshot from the analytics event log (players, opponents, ball, and the
+ball-movement arrow for that tick). Tick navigation only reads stored
+snapshots - it never re-runs the simulation and never calls AWS.
+
+The pitch is drawn as plain SVG (`ui/pitch.py`), so the UI adds no plotting
+or frontend dependency beyond Streamlit itself.
+
+```powershell
+pip install -r requirements.txt
+streamlit run ui/app.py
+```
+
+`DETERMINISTIC_ONLY` mode runs fully offline. `HYBRID` mode invokes Amazon
+Nova Pro on Bedrock and needs AWS credentials + Nova Pro access; it is only
+called when you explicitly select `HYBRID` and click **Run Simulation**.
 
 ### Using the brain in your own code
 
@@ -228,6 +284,39 @@ print(team_decision.primary_agent)      # "striker"
 print(team_decision.primary_action)     # FootballAction.SHOOT
 print(team_decision.reason)             # human-readable explanation
 ```
+
+---
+
+## 5a. Demo flow (≈5 minutes)
+
+A guided path for a review, a hackathon walk-through, or a first look.
+The full script is in [`DEMO.md`](DEMO.md); the short version:
+
+```powershell
+$env:PYTHONIOENCODING = "utf-8"
+
+# 1. Prove the deterministic brain works and is measured
+python -m tests.test_core
+python -m tests.test_benchmark          # 16/16 scenarios, 100% accuracy
+
+# 2. Run one full match and read the play-by-play + analytics
+python -m scripts.run_hybrid_match create_midfielder_pass_scenario 8
+
+# 3. One command that runs everything and writes RESULTS.md
+python -m scripts.run_full_demo
+
+# 4. Open the dashboard and do it visually
+streamlit run ui/app.py
+```
+
+In the dashboard: pick **Midfielder Pass**, mode **DETERMINISTIC_ONLY**,
+**8** ticks, click **Run simulation**, then drag the **Tick** slider from
+0 to 8 and watch the pitch, the ball-movement arrow, and the per-tick
+decision panel update. Switch the mode to **HYBRID** (needs AWS) to see
+the Deterministic-vs-Nova-Pro comparison and agreement per tick.
+
+`RESULTS.md` from step 3 is committed in the repo as a reference of the
+exact deterministic output.
 
 ---
 
@@ -370,24 +459,26 @@ There is no pytest requirement – each test file is a plain script with a
 `main()` and can be run directly:
 
 ```powershell
-python -m tests.test_core    # TeamCoordinator scoring model
-python -m tests.test_core       # full agent -> team decision
-python -m tests.test_agents       # individual agent rules
-python -m tests.test_agents
-python -m tests.test_agents
-python -m tests.test_agents
-python -m tests.test_core      # multi-tick simulation
-python -m tests.test_core        # history -> metrics
-python -m tests.test_hybrid       # local Strands-style pipeline
-python -m tests.test_benchmark              # the evaluation benchmark
+python -m tests.test_core        # world model, TeamCoordinator scoring, simulation, evaluator
+python -m tests.test_agents      # the four per-role agents + AgentCoordinator
+python -m tests.test_hybrid      # hybrid resolver + match simulator + Strands pipeline
+python -m tests.test_benchmark   # the 16-scenario evaluation benchmark
+python -m tests.test_analytics   # event log / timeline / aggregated report
 ```
 
-One test is **not** in the deterministic suite because it makes a real
-network call:
+> On Windows, set `$env:PYTHONIOENCODING = "utf-8"` first – some suites
+> print `⚽` / `📊` and the default console codepage cannot encode them.
 
-```powershell
-python -m tests.test_hybrid   # REAL Amazon Bedrock call
-```
+**`test_core`, `test_agents`, `test_benchmark`, `test_analytics` are fully
+offline and deterministic.**
+
+`test_hybrid` is mixed: the `test_hybrid_decision_resolver` and
+`test_strands_pipeline` cases are offline, but
+`test_bedrock_tactical_analyzer`, `test_hybrid_tactical_analyzer`, and
+`test_hybrid_match_simulator` make **real Amazon Bedrock / Nova Pro
+calls** and require AWS credentials in the default provider chain plus
+Nova Pro inference-profile access; without them those three cases fail.
+The deterministic engine, benchmark, and analytics never need AWS.
 
 `test_benchmark.py` specifically verifies: at least 16 scenarios exist,
 all four categories are present, every scenario yields a valid result,
@@ -672,4 +763,131 @@ behaves exactly as before (used by every existing test); when a
 
 ```powershell
 python -m tests.test_hybrid   # Tests 2 & 3 make real Nova calls
+```
+
+---
+
+## 12. Match Analytics (Steps 38-40)
+
+The `app/analytics/` package turns a `HybridMatchResult` into three
+read-only, deterministic views. It never runs a simulation or mutates a
+GameState - it only re-shapes data the simulator already produced.
+
+```
+HybridMatchResult
+   ├── build_event_log()   -> MatchEventLog     structured MatchEvent per tick  (Step 38)
+   ├── format_timeline()   -> str               replayable play-by-play         (Step 39)
+   └── format_analytics()  -> str               one aggregated match report     (Step 40)
+```
+
+### Step 38 - Event logging (`event_logger.py`)
+
+Every tick becomes one `MatchEvent`:
+
+```
+tick, tactical_mode, possession_before/after
+state_before                (serialized GameState)
+deterministic_decision      {tactical_mode, agent, action, confidence} | None
+nova_recommendation         same shape | None  (None when Nova was skipped/failed)
+final_decision              same shape
+agreement                   FULL / PARTIAL / DISAGREEMENT | None
+decision_source             AGREEMENT / HYBRID_RESOLUTION / DETERMINISTIC_* / NOVA_ONLY
+nova_called, nova_skip_reason
+ball_movement               {before: (x,y), after: (x,y), distance: float}
+state_after                 (serialized GameState)
+reason
+```
+
+`MatchEventLog.to_json()` serializes the whole log. `build_events(...)`
+also accepts a plain list of `HybridTickResult`.
+
+### Step 39 - Timeline (`match_timeline.py`)
+
+```
+MATCH START
+
+Tick 1
+Midfielder -> PASS
+Ball: (60, 40) -> (82, 50)
+
+Tick 2
+Striker -> SHOOT
+Ball: (82, 50) -> (100, 50)
+
+MATCH END
+```
+
+A line `Possession: OUR_TEAM -> OPPONENT_TEAM` is added on the ticks where
+possession changed.
+
+### Step 40 - Analytics report (`match_analytics.py`)
+
+```
+MATCH ANALYTICS
+
+Ticks: 6
+
+Actions:
+PASS: 1
+SHOOT: 1
+MOVE: 4
+
+Tactical Modes:
+ATTACK: 6
+
+AI Usage:
+Nova Calls: 0
+Nova Skipped: 6
+
+Agreement:
+Full: 0
+Partial: 0
+Disagreement: 0
+N/A (no Nova this tick): 6
+
+Decision Sources:
+DETERMINISTIC_ONLY: 6
+
+Movement:
+Ball Distance: 42.17
+Team Distance: 36.04
+  Goalkeeper: 0.00
+  Defender: 21.85
+  Midfielder: 11.19
+  Striker: 3.00
+```
+
+`analyze(...)` returns a typed `MatchAnalytics` dataclass; `Team Distance`
+is the summed movement of our four players, `Ball Distance` the summed
+per-tick ball displacement.
+
+### Running it
+
+```powershell
+# DETERMINISTIC_ONLY (default) - no AWS needed
+python -m scripts.run_hybrid_match create_midfielder_pass_scenario 8
+
+# involve Nova Pro (real Bedrock calls, needs AWS + Nova access)
+python -m scripts.run_hybrid_match create_shooting_scenario 6 HYBRID
+
+python -m tests.test_analytics   # offline
+```
+
+In code:
+
+```python
+from app.ai.match_simulator import HybridMatchSimulator, SimulationMode
+from app.analytics import build_event_log, format_timeline, format_analytics
+from app.core.sample_scenario import create_midfielder_pass_scenario
+
+match = HybridMatchSimulator(
+    create_midfielder_pass_scenario(),
+    mode=SimulationMode.DETERMINISTIC_ONLY,
+    max_ticks=8,
+).run()
+
+log = build_event_log(match)
+print(format_timeline(log))
+print(format_analytics(log))
+log.to_json()   # -> str, ready to write under data/match_results/
 ```
