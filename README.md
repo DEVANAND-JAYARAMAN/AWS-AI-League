@@ -42,12 +42,12 @@ Match History             the list of every tick
 Match Evaluator           turns the history into readable metrics
 ```
 
-On top of that sits a **local agent pipeline** (`strands_agents/`) that
+On top of that sits a **local agent pipeline** (`app/strands/`) that
 mirrors the shape of a real Strands agent but calls the tools directly
 instead of asking an LLM.
 
-And on top of *that* sits the **Evaluation Benchmark** (`scenarios/` +
-`evaluation/`) which checks the football brain against a library of
+And on top of *that* sits the **Evaluation Benchmark**
+(`app/evaluation/`) which checks the football brain against a library of
 hand-designed situations.
 
 ---
@@ -56,7 +56,7 @@ hand-designed situations.
 
 | Term | What it means |
 |---|---|
-| **`Position`** | An `(x, y)` point on the pitch. `x` runs 0–100 from our goal to the opponent goal; `y` runs 0–100 across the width. Defined in `simulation/game_state.py`. |
+| **`Position`** | An `(x, y)` point on the pitch. `x` runs 0–100 from our goal to the opponent goal; `y` runs 0–100 across the width. Defined in `app/core/game_state.py`. |
 | **`Player`** | `player_id`, `role` (`GOALKEEPER` / `DEFENDER` / `MIDFIELDER` / `STRIKER`), and a `Position`. |
 | **`GameState`** | The whole world at one instant: `ball_position`, `our_team` (list of `Player`), `opponent_team`, and `possession` (`"OUR_TEAM"` or `"OPPONENT_TEAM"`). |
 | **`FootballAction`** | The five things an agent can decide to do: `PASS`, `SHOOT`, `PRESS`, `MOVE`, `HOLD_POSITION`. |
@@ -67,7 +67,7 @@ hand-designed situations.
 ### How the team picks ONE action
 
 Each agent proposes a decision. The `TeamCoordinator`
-(`simulation/team_coordinator.py`) gives every proposal a score:
+(`app/core/team_coordinator.py`) gives every proposal a score:
 
 ```
 final_score = action_priority(mode) + role_relevance_bonus + confidence * 10
@@ -90,44 +90,60 @@ deterministic.
 
 ## 3. Project layout
 
+Everything lives under the `app/` package.
+
 ```
-agents/                  the football "brain"
-  base_agent.py          BaseFootballAgent (abstract: .decide(game_state))
-  goalkeeper_agent.py    one file per role, pure if/else rules
-  defender_agent.py
-  midfielder_agent.py
-  striker_agent.py
-  coordinator.py         AgentCoordinator: runs all four, then TeamCoordinator
+app/
+  agents/                the football "brain"
+    base.py              BaseFootballAgent (abstract: .decide(game_state))
+    goalkeeper.py        one file per role, pure if/else rules
+    defender.py
+    midfielder.py
+    striker.py
+    coordinator.py       AgentCoordinator: runs all four, then TeamCoordinator
 
-simulation/              the deterministic world
-  game_state.py          Position / Player / GameState
-  decision.py            FootballAction / FootballDecision
-  field.py               OUR_GOAL / OPPONENT_GOAL constants
-  team_coordinator.py    the scoring model above -> TeamDecision
-  tactical_analyzer.py   structured read of a GameState
-  engine.py              FootballSimulationEngine: advance the state one tick
-  dynamics.py            how non-deciding players drift each tick
-  evaluator.py           MatchEvaluator: history -> metrics + report
-  match_runner.py        convenience: scenario -> engine -> evaluate
-  sample_scenario.py     hand-built GameStates used by tests & the benchmark
+  core/                  the deterministic world + shared helpers
+    game_state.py        Position / Player / GameState
+    decisions.py         FootballAction / FootballDecision
+    field.py             OUR_GOAL / OPPONENT_GOAL constants
+    team_coordinator.py  the scoring model above -> TeamDecision
+    tactical_engine.py   structured read of a GameState (analyze_game_state)
+    decision_engine.py   single-decision helper built on tactical_engine
+    simulation.py        FootballSimulationEngine: advance the state one tick
+    dynamics.py          how non-deciding players drift each tick
+    evaluator.py         MatchEvaluator: history -> metrics + report
+    match_runner.py      convenience: scenario -> engine -> evaluate
+    sample_scenario.py   hand-built GameStates used by tests & the benchmark
+    decision_tools.py    shared geometry helpers (distance, closest player…)
+    football_tools.py    distance tool
+    serialization.py     domain objects <-> plain dicts
 
-tools/                   thin JSON-friendly wrappers around the modules above
-  tactical_tools.py      (no football logic of their own)
-  simulation_tools.py
-  evaluation_tools.py
-  decision_tools.py      shared geometry helpers (distance, closest player…)
+  ai/                    deterministic + Amazon Nova Pro hybrid layer
+    bedrock_client.py    thin Bedrock Converse wrapper
+    tactical_prompt.py   GameState -> Converse prompt
+    response_parser.py   validate Nova's JSON -> TacticalRecommendation
+    bedrock_nova.py      LLMTacticalAnalyzer (prompt -> Nova -> parse)
+    decision_comparator.py   deterministic vs Nova agreement
+    hybrid_analyzer.py   runs both brains on one GameState
+    decision_resolver.py HybridDecisionResolver: one final decision
+    match_simulator.py   HybridMatchSimulator: tick-by-tick hybrid match
 
-strands_agents/          local, LLM-free agent adapters
-  tactical_agent.py      TacticalAgentAdapter
-  simulation_agent.py    SimulationAgentAdapter
-  evaluation_agent.py    EvaluationAgentAdapter
+  analytics/             match event logging + timeline (Step 38, WIP)
 
-utils/
-  serialization.py       domain objects <-> plain dicts
+  strands/               local, LLM-free Strands-style agent adapters
+    tactical_agent.py / simulation_agent.py / evaluation_agent.py
+    tactical_tools.py / simulation_tools.py / evaluation_tools.py
+    first_agent.py
 
-scenarios/               the benchmark scenario library  (see section 6)
-evaluation/              the benchmark runner            (see section 6)
-tests/                   one runnable file per area      (see section 7)
+  evaluation/            the benchmark runner            (see section 6)
+    benchmark_runner.py
+    scenarios/           the benchmark scenario library  (see section 6)
+
+  config/                env.py / settings.py / logging_config.py
+
+main.py                  runs the evaluation benchmark
+scripts/run_match.py     run one match, save results to data/match_results/
+tests/                   test_core / test_agents / test_hybrid / test_benchmark
 ```
 
 ---
@@ -147,8 +163,8 @@ pip install -r requirements.txt
 ```
 
 > The `strands-agents` package is only needed for the *future* Bedrock
-> integration. Nothing in the current code imports it at runtime – the
-> adapters in `strands_agents/` are plain Python.
+> integration. Nothing in the current deterministic code imports it at
+> runtime – the adapters in `app/strands/` are plain Python.
 
 ### Environment file
 
@@ -157,11 +173,11 @@ Copy-Item .env.example .env          # then edit .env
 ```
 
 `.env` holds the AWS / Bedrock settings and is **git-ignored – never
-commit it**. `config/env.py` is the single place that loads it (via
+commit it**. `app/config/env.py` is the single place that loads it (via
 `python-dotenv`) and exposes the values:
 
 ```python
-from config import env
+from app.config import env
 env.USE_BEDROCK          # False by default -> pure local, no AWS calls
 env.AWS_REGION
 env.BEDROCK_MODEL_ID
@@ -183,27 +199,26 @@ $env:PYTHONIOENCODING = "utf-8"
 
 ## 5. Running things
 
-Every module is runnable with `python -m <package>.<module>`.
-
 ```powershell
-# See the team decision for a few sample situations
-python -m tests.test_team_coordinator
-
-# Run a full multi-tick simulation and print the evaluation report
-python -m tests.test_simulation_engine
-
-# Run the local Strands-style pipeline end to end
-python -m tests.test_strands_pipeline
-
 # Run the evaluation benchmark and print the full report
-python -m evaluation.benchmark_runner
+python main.py
+# ...or:  python -m app.app.evaluation.benchmark_runner
+
+# Run one match and save the result under data/match_results/
+python -m scripts.run_match create_shooting_scenario 10
+
+# Consolidated test suites
+python -m tests.test_core        # core engine, offline
+python -m tests.test_agents      # the four agents, offline
+python -m tests.test_hybrid      # hybrid layer (some cases need AWS)
+python -m tests.test_benchmark   # 16-scenario benchmark, offline
 ```
 
 ### Using the brain in your own code
 
 ```python
-from agents.coordinator import AgentCoordinator
-from simulation.sample_scenario import create_shooting_scenario
+from app.agents.coordinator import AgentCoordinator
+from app.core.sample_scenario import create_shooting_scenario
 
 game_state = create_shooting_scenario()
 team_decision = AgentCoordinator().get_coordinated_team_decision(game_state)
@@ -222,10 +237,10 @@ print(team_decision.reason)             # human-readable explanation
 system is, across many predefined situations, deterministically.
 
 ```
-Scenario Library         scenarios/*.py
+Scenario Library         app/evaluation/scenarios/*.py
       |
       v
-Initial GameState        reuses simulation/sample_scenario.py
+Initial GameState        reuses app/core/sample_scenario.py
       |
       v
 Expected Behaviour       what the CURRENT deterministic rules already do
@@ -245,7 +260,7 @@ Benchmark Report         overall + per-category accuracy
 
 ### What a scenario looks like
 
-`scenarios/scenario_models.py` defines a small, readable dataclass:
+`app/evaluation/scenarios/scenario_models.py` defines a small, readable dataclass:
 
 ```python
 Scenario(
@@ -280,7 +295,7 @@ point of the **Transition** category.
 
 ### The report
 
-`python -m evaluation.benchmark_runner` prints one block per scenario:
+`python -m app.evaluation.benchmark_runner` prints one block per scenario:
 
 ```
 Scenario: Clear Shooting Opportunity
@@ -339,9 +354,9 @@ regresses against the deterministic system.
 
 ### Adding your own scenario
 
-1. Open the file for the category, e.g. `scenarios/attacking_scenarios.py`.
+1. Open the file for the category, e.g. `app/evaluation/scenarios/attacking_scenarios.py`.
 2. Append a `Scenario(...)` to the list returned by `build_*_scenarios()`.
-   Reuse a `GameState` from `simulation/sample_scenario.py` or build one
+   Reuse a `GameState` from `app/core/sample_scenario.py` or build one
    inline with `GameState` / `Player` / `Position`.
 3. Set the expectation to whatever the current rules actually produce
    (run the benchmark once to see).
@@ -355,15 +370,15 @@ There is no pytest requirement – each test file is a plain script with a
 `main()` and can be run directly:
 
 ```powershell
-python -m tests.test_team_prioritization    # TeamCoordinator scoring model
-python -m tests.test_team_coordinator       # full agent -> team decision
-python -m tests.test_goalkeeper_agent       # individual agent rules
-python -m tests.test_defender_agent
-python -m tests.test_midfielder_agent
-python -m tests.test_striker_agent
-python -m tests.test_simulation_engine      # multi-tick simulation
-python -m tests.test_match_evaluator        # history -> metrics
-python -m tests.test_strands_pipeline       # local Strands-style pipeline
+python -m tests.test_core    # TeamCoordinator scoring model
+python -m tests.test_core       # full agent -> team decision
+python -m tests.test_agents       # individual agent rules
+python -m tests.test_agents
+python -m tests.test_agents
+python -m tests.test_agents
+python -m tests.test_core      # multi-tick simulation
+python -m tests.test_core        # history -> metrics
+python -m tests.test_hybrid       # local Strands-style pipeline
 python -m tests.test_benchmark              # the evaluation benchmark
 ```
 
@@ -371,7 +386,7 @@ One test is **not** in the deterministic suite because it makes a real
 network call:
 
 ```powershell
-python -m tests.test_bedrock_tactical_analyzer   # REAL Amazon Bedrock call
+python -m tests.test_hybrid   # REAL Amazon Bedrock call
 ```
 
 `test_benchmark.py` specifically verifies: at least 16 scenarios exist,
@@ -383,18 +398,18 @@ is deterministic, and wrong expectations are caught as failures.
 
 ## 8. The local Strands agent pipeline
 
-`strands_agents/` mimics a real `strands.Agent` (receive input → select
+`app/strands/` mimics a real `strands.Agent` (receive input → select
 and call tools → return a structured result) but with a **fixed tool
 call order** instead of an LLM.
 
 ```
-Strands-Compatible Agent Layer      strands_agents/
+Strands-Compatible Agent Layer      app/strands/
         |                             TacticalAgentAdapter
         v                             SimulationAgentAdapter
 Tool Wrappers                         EvaluationAgentAdapter
-        |                            tools/tactical_tools.py
-        v                            tools/simulation_tools.py
-Deterministic Football Intelligence  tools/evaluation_tools.py
+        |                            app/strands/tactical_tools.py
+        v                            app/strands/simulation_tools.py
+Deterministic Football Intelligence  app/strands/evaluation_tools.py
                                      -> AgentCoordinator / TeamCoordinator
                                      -> FootballSimulationEngine + dynamics
                                      -> MatchEvaluator
@@ -402,7 +417,7 @@ Deterministic Football Intelligence  tools/evaluation_tools.py
 
 * The **adapters** accept a `GameState` (object *or* serialized dict).
 * The **tools** add no football logic – they call the deterministic
-  modules and return JSON-serializable dicts (`utils/serialization.py`).
+  modules and return JSON-serializable dicts (`app/core/serialization.py`).
 * The **deterministic system** is authoritative and unchanged.
 
 Each adapter has a commented `# Future integration point:` block showing
@@ -422,7 +437,7 @@ Amazon Bedrock Model      <- added in a later step
 Tool Selection            <- the LLM chooses which football tool to call
         |
         v
-Existing Football Tools   <- tools/*_tools.py  (unchanged)
+Existing Football Tools   <- app/strands/*_tools.py  (unchanged)
         |
         v
 Deterministic Simulation  <- still the source of truth
@@ -437,7 +452,7 @@ are – and the benchmark becomes the yardstick for the new agent.
 
 ## 10. Amazon Nova Pro Integration (advisory)
 
-The `llm/` package adds a **first, real** LLM tactical analysis on top of
+The `app/ai/` package adds a **first, real** LLM tactical analysis on top of
 the deterministic system, using **Amazon Nova Pro** through the Bedrock
 **Converse API**. It is **advisory only** – it never mutates a
 `GameState` and never replaces the deterministic engine.
@@ -446,10 +461,10 @@ the deterministic system, using **Amazon Nova Pro** through the Bedrock
 GameState
     |
     v
-Tactical Context Builder   llm/tactical_prompt.py  (reuses GameState, no new model)
+Tactical Context Builder   app/ai/tactical_prompt.py  (reuses GameState, no new model)
     |
     v
-Amazon Bedrock Converse    llm/bedrock_client.py   (boto3 "bedrock-runtime".converse)
+Amazon Bedrock Converse    app/ai/bedrock_client.py   (boto3 "bedrock-runtime".converse)
     |
     v
 Amazon Nova Pro            apac.amazon.nova-pro-v1:0  (APAC inference profile)
@@ -458,7 +473,7 @@ Amazon Nova Pro            apac.amazon.nova-pro-v1:0  (APAC inference profile)
 Structured Recommendation  strict JSON: tactical_mode / recommended_agent /
     |                       recommended_action / confidence / reason
     v
-Validation Layer           llm/response_parser.py  -> TacticalRecommendation
+Validation Layer           app/ai/response_parser.py  -> TacticalRecommendation
     |
     v
 Deterministic Football     unchanged – still the source of truth
@@ -469,11 +484,11 @@ Engine                     (the recommendation stops here for now)
 
 | File | Role |
 |---|---|
-| `llm/bedrock_client.py` | `BedrockClient` – reusable `converse` wrapper. `invoke(messages, system=, max_tokens=500, temperature=0.2)` builds `inferenceConfig` (`maxTokens` / `temperature`), calls `client.converse(...)`, and returns the assistant text. Region + model id configurable via `AWS_REGION` / `BEDROCK_MODEL_ID`; defaults `ap-south-1` / `apac.amazon.nova-pro-v1:0`. Raises `BedrockInvocationError` with a clear message on failure. Logs model id, region, and success – never credentials. |
-| `llm/tactical_prompt.py` | Turns a `GameState` into a compact football context (ball, possession, our/opponent players with role + position) plus a strict system instruction. Emits **Converse-format** messages. Allowed actions/modes are derived from the real `FootballAction` enum, not hardcoded. |
-| `llm/response_parser.py` | `parse_recommendation(text, valid_agents=...)` – extracts JSON (tolerates code fences), validates every field: `tactical_mode` in `ATTACK/DEFENSE/TRANSITION`, `recommended_action` against the real `FootballAction` enum, `recommended_agent` against the **players in the current GameState**, `confidence` in `[0, 1]`, non-empty `reason`. Returns a `TacticalRecommendation` dataclass or raises `TacticalValidationError`. Never guesses a fallback. |
-| `llm/llm_tactical_analyzer.py` | `LLMTacticalAnalyzer.analyze(game_state)` – ties the three together and passes the live player ids to the parser. Reusable from a future Strands agent. |
-| `tests/test_bedrock_tactical_analyzer.py` | Runs the full pipeline against the *Clear Shooting Opportunity* scenario with a **real Bedrock Converse call**. Not in the regression suite. Fails clearly if AWS / Bedrock / Nova Pro access is unavailable. |
+| `app/ai/bedrock_client.py` | `BedrockClient` – reusable `converse` wrapper. `invoke(messages, system=, max_tokens=500, temperature=0.2)` builds `inferenceConfig` (`maxTokens` / `temperature`), calls `client.converse(...)`, and returns the assistant text. Region + model id configurable via `AWS_REGION` / `BEDROCK_MODEL_ID`; defaults `ap-south-1` / `apac.amazon.nova-pro-v1:0`. Raises `BedrockInvocationError` with a clear message on failure. Logs model id, region, and success – never credentials. |
+| `app/ai/tactical_prompt.py` | Turns a `GameState` into a compact football context (ball, possession, our/opponent players with role + position) plus a strict system instruction. Emits **Converse-format** messages. Allowed actions/modes are derived from the real `FootballAction` enum, not hardcoded. |
+| `app/ai/response_parser.py` | `parse_recommendation(text, valid_agents=...)` – extracts JSON (tolerates code fences), validates every field: `tactical_mode` in `ATTACK/DEFENSE/TRANSITION`, `recommended_action` against the real `FootballAction` enum, `recommended_agent` against the **players in the current GameState**, `confidence` in `[0, 1]`, non-empty `reason`. Returns a `TacticalRecommendation` dataclass or raises `TacticalValidationError`. Never guesses a fallback. |
+| `app/ai/bedrock_nova.py` | `LLMTacticalAnalyzer.analyze(game_state)` – ties the three together and passes the live player ids to the parser. Reusable from a future Strands agent. |
+| `tests/test_hybrid.py` | Runs the full pipeline against the *Clear Shooting Opportunity* scenario with a **real Bedrock Converse call**. Not in the regression suite. Fails clearly if AWS / Bedrock / Nova Pro access is unavailable. |
 
 ### Credentials & configuration
 
@@ -507,7 +522,7 @@ Engine                     (the recommendation stops here for now)
 ### Run it
 
 ```powershell
-python -m tests.test_bedrock_tactical_analyzer   # real Nova Pro call
+python -m tests.test_hybrid   # real Nova Pro call
 python -m tests.test_benchmark                   # deterministic baseline (unchanged)
 ```
 
@@ -515,7 +530,7 @@ python -m tests.test_benchmark                   # deterministic baseline (uncha
 
 ## 11. Hybrid AI Decision Evaluation
 
-The `hybrid/` package runs **both tactical brains on the same
+The `app/ai/` hybrid modules run **both tactical brains on the same
 GameState** and measures how much they agree. It changes nothing – it
 only observes.
 
@@ -525,13 +540,13 @@ GameState
    ├── Deterministic Multi-Agent System   AgentCoordinator -> TeamCoordinator
    │        └─> TeamDecision (mode / primary agent / primary action)
    │
-   └── Amazon Nova Pro via Bedrock         llm/ (Converse API)
+   └── Amazon Nova Pro via Bedrock         app/ai/ (Converse API)
             │
             ▼
       Tactical Recommendation (mode / recommended agent / recommended action)
             │
             ▼
-      Decision Comparison        hybrid/decision_comparator.py
+      Decision Comparison        app/ai/decision_comparator.py
             │
             ▼
       Agreement Metrics          full / partial / disagreement + %s
@@ -555,9 +570,9 @@ The project now compares three things head-to-head:
 
 | File | Role |
 |---|---|
-| `hybrid/decision_comparator.py` | `compare(team_decision, recommendation) -> DecisionComparison` (read-only: mode / agent / action matches, confidences, `AgreementLevel`, `.differences()`). `summarize([...]) -> HybridEvaluationMetrics` with safe division. |
-| `hybrid/hybrid_tactical_analyzer.py` | `HybridTacticalAnalyzer.analyze(game_state) -> DecisionComparison` and `.analyze_scenarios([(name, state), ...]) -> (results, metrics)`. Both brains get the same GameState; the GameState is never mutated. |
-| `tests/test_hybrid_tactical_analyzer.py` | Real end-to-end run over *Clear Shooting Opportunity*, *Open Forward Pass*, *Defensive Pressure* with live Nova Pro calls, printing each comparison plus the summary. |
+| `app/ai/decision_comparator.py` | `compare(team_decision, recommendation) -> DecisionComparison` (read-only: mode / agent / action matches, confidences, `AgreementLevel`, `.differences()`). `summarize([...]) -> HybridEvaluationMetrics` with safe division. |
+| `app/ai/hybrid_analyzer.py` | `HybridTacticalAnalyzer.analyze(game_state) -> DecisionComparison` and `.analyze_scenarios([(name, state), ...]) -> (results, metrics)`. Both brains get the same GameState; the GameState is never mutated. |
+| `tests/test_hybrid.py` | Real end-to-end run over *Clear Shooting Opportunity*, *Open Forward Pass*, *Defensive Pressure* with live Nova Pro calls, printing each comparison plus the summary. |
 
 ### Guarantees
 
@@ -573,7 +588,7 @@ The project now compares three things head-to-head:
 ### Run it
 
 ```powershell
-python -m tests.test_hybrid_tactical_analyzer   # real Nova Pro calls (3 scenarios)
+python -m tests.test_hybrid   # real Nova Pro calls (3 scenarios)
 python -m tests.test_benchmark                  # deterministic baseline, no AWS
 ```
 
@@ -596,7 +611,7 @@ comparisons against the evaluation benchmark.
 
 ### Hybrid Decision Resolver
 
-`agents/hybrid_decision_resolver.py` takes the deterministic decision,
+`app/ai/decision_resolver.py` takes the deterministic decision,
 the Nova Pro recommendation, and the `DecisionComparison`, and produces
 **one** `HybridDecision` (`final_tactical_mode / final_agent /
 final_action / final_confidence / decision_source / agreement_type /
@@ -610,12 +625,12 @@ give an identical result – and never mutates its inputs.
 | `DISAGREEMENT` | tactical modes conflict → keep the deterministic decision as the safety baseline; the Nova recommendation is reported in `reason`, not discarded | `DETERMINISTIC_FALLBACK` |
 
 ```powershell
-python -m tests.test_hybrid_decision_resolver   # offline, no AWS needed
+python -m tests.test_hybrid   # offline, no AWS needed
 ```
 
 ### Hybrid Match Simulation
 
-`simulation/hybrid_match_simulator.py` plays a whole match tick by tick,
+`app/ai/match_simulator.py` plays a whole match tick by tick,
 choosing per tick between the deterministic decision and Nova Pro, and
 having the **existing** `FootballSimulationEngine` execute whatever final
 decision was chosen.
@@ -656,5 +671,5 @@ behaves exactly as before (used by every existing test); when a
 `TeamDecision` is passed it is executed directly.
 
 ```powershell
-python -m tests.test_hybrid_match_simulator   # Tests 2 & 3 make real Nova calls
+python -m tests.test_hybrid   # Tests 2 & 3 make real Nova calls
 ```

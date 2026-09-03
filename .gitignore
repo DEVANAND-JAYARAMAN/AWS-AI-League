@@ -12,6 +12,10 @@ __pycache__/
 logs/
 *.log
 
+# Generated match results
+data/match_results/*
+!data/match_results/.gitkeep
+
 # AWS
 .aws/
 

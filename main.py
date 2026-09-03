@@ -1,22 +1,19 @@
-import logging
+"""
+Entry point for the Agentic Football system.
 
-from agents.first_agent import create_agent
-from config.logging_config import setup_logging
+Runs the fully deterministic evaluation benchmark (no AWS / Bedrock
+required) and prints the report.
+"""
+
+from app.config.logging_config import setup_logging
+from app.evaluation import format_report, run_benchmark
 
 
 def main():
+    setup_logging()
+    report = run_benchmark()
+    print(format_report(report))
 
-    run_test(
-        "Striker - Attacking Pressure",
-        create_attacking_scenario,
-    )
 
-    run_test(
-        "Striker - Defensive Situation",
-        create_defensive_scenario,
-    )
-
-    run_test(
-        "Striker - Clear Shooting Opportunity",
-        create_shooting_scenario,
-    )
+if __name__ == "__main__":
+    main()
