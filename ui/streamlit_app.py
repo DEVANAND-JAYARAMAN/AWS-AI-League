@@ -15,7 +15,8 @@ Navigating ticks never re-runs the simulation and never calls AWS.
 
 Run with:
 
-    streamlit run ui/app.py
+    streamlit run ui/streamlit_app.py
+
 """
 
 import inspect
@@ -62,7 +63,7 @@ digraph Architecture {
   edge [color="#8a8a8a", fontname="Helvetica", fontsize=9];
 
   subgraph cluster_agents {
-    label="Specialised agents (deterministic)";
+    label="Specialised agents (deter    ministic)";
     style="rounded"; color="#c8d3e6"; fontname="Helvetica"; fontsize=10;
     GK [label="Goalkeeper"]; DF [label="Defender"];
     MF [label="Midfielder"]; ST [label="Striker"];

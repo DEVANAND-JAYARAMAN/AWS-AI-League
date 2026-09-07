@@ -8,7 +8,6 @@ required) and prints the report.
 from app.config.logging_config import setup_logging
 from app.evaluation import format_report, run_benchmark
 
-
 def main():
     setup_logging()
     report = run_benchmark()
