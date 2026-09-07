@@ -276,7 +276,7 @@ python main.py
 # Run one match and save the result under data/match_results/
 python -m scripts.run_match create_shooting_scenario 10
 
-# Run a match and print the timeline + analytics (Steps 38-40)
+# Run a match and print the timeline + analytics
 python -m scripts.run_hybrid_match create_midfielder_pass_scenario 8
 # add a mode as the 3rd arg (HYBRID / NOVA_ONLY / ...) to involve Nova Pro
 
@@ -812,7 +812,7 @@ python -m tests.test_hybrid   # Tests 2 & 3 make real Nova calls
 
 ---
 
-## 12. Match Analytics (Steps 38-40)
+## 12. Match Analytics
 
 The `app/analytics/` package turns a `HybridMatchResult` into three
 read-only, deterministic views. It never runs a simulation or mutates a
@@ -820,12 +820,12 @@ GameState - it only re-shapes data the simulator already produced.
 
 ```
 HybridMatchResult
-   ├── build_event_log()   -> MatchEventLog     structured MatchEvent per tick  (Step 38)
-   ├── format_timeline()   -> str               replayable play-by-play         (Step 39)
-   └── format_analytics()  -> str               one aggregated match report     (Step 40)
+   ├── build_event_log()   -> MatchEventLog     structured MatchEvent per tick
+   ├── format_timeline()   -> str               replayable play-by-play
+   └── format_analytics()  -> str               one aggregated match report
 ```
 
-### Step 38 - Event logging (`event_logger.py`)
+### Event logging (`event_logger.py`)
 
 Every tick becomes one `MatchEvent`:
 
@@ -846,7 +846,7 @@ reason
 `MatchEventLog.to_json()` serializes the whole log. `build_events(...)`
 also accepts a plain list of `HybridTickResult`.
 
-### Step 39 - Timeline (`match_timeline.py`)
+### Timeline (`match_timeline.py`)
 
 ```
 MATCH START
@@ -865,7 +865,7 @@ MATCH END
 A line `Possession: OUR_TEAM -> OPPONENT_TEAM` is added on the ticks where
 possession changed.
 
-### Step 40 - Analytics report (`match_analytics.py`)
+### Analytics report (`match_analytics.py`)
 
 ```
 MATCH ANALYTICS
@@ -947,25 +947,25 @@ container on **Amazon ECS Fargate**, reaching **Amazon Nova Pro** through
 
 ```mermaid
 flowchart TD
-    U["User (browser)"]
+    U["User browser"]
     NET["Public Internet"]
-    subgraph AWS["AWS Cloud — region ap-south-1"]
+    subgraph AWS["AWS Cloud - region ap-south-1"]
         subgraph VPC["VPC / public subnet"]
-            SG{{"Security group<br/>inbound TCP 8501"}}
-            subgraph TASK["ECS Fargate task (aws-ai-league-task)"]
-                C["Docker container 'aws-ai-league'<br/>Streamlit on :8501"]
+            SG["Security group - inbound TCP 8501"]
+            subgraph TASK["ECS Fargate task: aws-ai-league-task"]
+                C["Docker container aws-ai-league - Streamlit on :8501"]
             end
         end
-        ECR[("Amazon ECR<br/>aws-ai-league:latest")]
-        CW[["CloudWatch Logs<br/>/ecs/aws-ai-league"]]
-        BR["Amazon Bedrock<br/>Converse API"]
-        NOVA["Amazon Nova Pro<br/>apac.amazon.nova-pro-v1:0"]
+        ECR["Amazon ECR - aws-ai-league:latest"]
+        CW["CloudWatch Logs - /ecs/aws-ai-league"]
+        BR["Amazon Bedrock - Converse API"]
+        NOVA["Amazon Nova Pro - apac.amazon.nova-pro-v1:0"]
     end
 
     U --> NET --> SG --> C
-    ECR -. image pull (execution role) .-> TASK
-    C -. logs (execution role) .-> CW
-    C -->|InvokeModel (task role)| BR --> NOVA
+    ECR -.->|image pull - execution role| C
+    C -.->|logs - execution role| CW
+    C -->|InvokeModel - task role| BR --> NOVA
 ```
 
 * **Docker image** is built from the repo `Dockerfile` (`python:3.12-slim`,
