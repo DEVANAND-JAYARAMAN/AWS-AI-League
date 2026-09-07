@@ -140,7 +140,7 @@ Deterministic and reproducible: identical inputs always give an identical
 | `app/analytics/` | `build_event_log` / `format_timeline` / `analyze` / `format_analytics` – read-only, deterministic | no | §12 |
 | `app/strands/` | LLM-free Strands-style adapters + tool wrappers | no | §8 |
 | `app/evaluation/` | benchmark runner + scenario library | no | §6 |
-| `ui/app.py`, `ui/pitch.py` | Streamlit dashboard + pure-SVG pitch renderer; thin presentation layer over the packages above | UI opt-in | §5 |
+| `ui/streamlit_app.py`, `ui/pitch.py` | Streamlit dashboard + pure-SVG pitch renderer; thin presentation layer over the packages above | UI opt-in | §5 |
 
 ---
 

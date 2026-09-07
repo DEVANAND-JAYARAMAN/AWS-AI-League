@@ -90,7 +90,7 @@ exact expected output). Exit code is non-zero if anything fails.
 ## 4. Do it visually — the dashboard (~2 min)
 
 ```powershell
-streamlit run ui/app.py
+streamlit run ui/streamlit_app.py
 ```
 
 0. Expand **System architecture** at the top for the live pipeline

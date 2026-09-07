@@ -203,7 +203,7 @@ app/
   config/                env.py / settings.py / logging_config.py
 
 ui/                      Streamlit dashboard              (see section 5)
-  app.py                 the dashboard: controls, pitch, decisions, analytics
+  streamlit_app.py       the dashboard: controls, pitch, decisions, analytics
   pitch.py               pure-SVG football pitch renderer (no plotting deps)
 
 main.py                  runs the evaluation benchmark
