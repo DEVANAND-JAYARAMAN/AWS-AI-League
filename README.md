@@ -21,8 +21,28 @@ scenario, choose deterministic or hybrid mode, run the match, then step
 through it tick-by-tick on a rendered football pitch with full decision,
 agreement, and analytics breakdowns.
 
+The project is packaged as a **Docker** image and deployed to **AWS** as a
+single **Amazon ECS Fargate** task that serves the Streamlit dashboard on
+port `8501` and calls **Amazon Nova Pro** through **Amazon Bedrock**. See
+[Deployment](#13-aws-deployment-overview) for the full picture.
+
 > **New here?** Read [`ARCHITECTURE.md`](ARCHITECTURE.md) for the one-page
 > system overview, then [`DEMO.md`](DEMO.md) for a 5-minute guided walk-through.
+> [`RESULTS.md`](RESULTS.md) has a committed reference of the exact deterministic output.
+
+### Technology stack
+
+| Layer | Technology |
+|---|---|
+| Language / runtime | Python 3.12 |
+| Web UI | Streamlit (port `8501`, pure-SVG pitch renderer, no extra frontend deps) |
+| Foundation model | Amazon Nova Pro (`apac.amazon.nova-pro-v1:0` inference profile) |
+| Model access | Amazon Bedrock Converse API via `boto3` (`bedrock-runtime`) |
+| Container | Docker (`python:3.12-slim` base) |
+| Image registry | Amazon ECR |
+| Compute | Amazon ECS on AWS Fargate (`awsvpc` networking, public IP) |
+| Logging | Amazon CloudWatch Logs (`/ecs/aws-ai-league`) |
+| AWS Region | `ap-south-1` (Asia Pacific – Mumbai) |
 
 ---
 
@@ -288,7 +308,7 @@ or frontend dependency beyond Streamlit itself.
 
 ```powershell
 pip install -r requirements.txt
-streamlit run ui/app.py
+streamlit run ui/streamlit_app.py
 ```
 
 `DETERMINISTIC_ONLY` mode runs fully offline. `HYBRID` mode invokes Amazon
@@ -331,7 +351,7 @@ python -m scripts.run_hybrid_match create_midfielder_pass_scenario 8
 python -m scripts.run_full_demo
 
 # 4. Open the dashboard and do it visually
-streamlit run ui/app.py
+streamlit run ui/streamlit_app.py
 ```
 
 In the dashboard: pick **Midfielder Pass**, mode **DETERMINISTIC_ONLY**,
@@ -916,3 +936,240 @@ print(format_timeline(log))
 print(format_analytics(log))
 log.to_json()   # -> str, ready to write under data/match_results/
 ```
+
+---
+
+## 13. AWS deployment overview
+
+The live application is the **Streamlit dashboard** running inside a Docker
+container on **Amazon ECS Fargate**, reaching **Amazon Nova Pro** through
+**Amazon Bedrock**.
+
+```mermaid
+flowchart TD
+    U["User (browser)"]
+    NET["Public Internet"]
+    subgraph AWS["AWS Cloud — region ap-south-1"]
+        subgraph VPC["VPC / public subnet"]
+            SG{{"Security group<br/>inbound TCP 8501"}}
+            subgraph TASK["ECS Fargate task (aws-ai-league-task)"]
+                C["Docker container 'aws-ai-league'<br/>Streamlit on :8501"]
+            end
+        end
+        ECR[("Amazon ECR<br/>aws-ai-league:latest")]
+        CW[["CloudWatch Logs<br/>/ecs/aws-ai-league"]]
+        BR["Amazon Bedrock<br/>Converse API"]
+        NOVA["Amazon Nova Pro<br/>apac.amazon.nova-pro-v1:0"]
+    end
+
+    U --> NET --> SG --> C
+    ECR -. image pull (execution role) .-> TASK
+    C -. logs (execution role) .-> CW
+    C -->|InvokeModel (task role)| BR --> NOVA
+```
+
+* **Docker image** is built from the repo `Dockerfile` (`python:3.12-slim`,
+  installs `requirements.txt`, launches `streamlit run ui/streamlit_app.py
+  --server.address=0.0.0.0 --server.port=8501`).
+* The image is pushed to **Amazon ECR** as `aws-ai-league:latest`.
+* **Amazon ECS on AWS Fargate** runs it as a task — no EC2 hosts to manage.
+* **App Runner was evaluated early on and is no longer used.** The
+  `infrastructure/apprunner/` files are kept for historical reference only;
+  the active deployment is ECS Fargate + ECR.
+
+### Build & push the image
+
+```bash
+# authenticate Docker to ECR
+aws ecr get-login-password --region ap-south-1 \
+  | docker login --username AWS --password-stdin <account-id>.dkr.ecr.ap-south-1.amazonaws.com
+
+# build, tag, push
+docker build -t aws-ai-league:latest .
+docker tag aws-ai-league:latest <account-id>.dkr.ecr.ap-south-1.amazonaws.com/aws-ai-league:latest
+docker push <account-id>.dkr.ecr.ap-south-1.amazonaws.com/aws-ai-league:latest
+```
+
+### Run the container locally (optional)
+
+```bash
+docker build -t aws-ai-league:latest .
+docker run --rm -p 8501:8501 \
+  -e AWS_REGION=ap-south-1 \
+  -v $HOME/.aws:/root/.aws:ro \      # only needed for HYBRID / Nova Pro modes
+  aws-ai-league:latest
+# open http://localhost:8501
+```
+
+`DETERMINISTIC_ONLY` mode needs no credentials. Mounting `~/.aws` read-only
+lets the container use your local profile for `HYBRID` / `NOVA_ONLY` runs.
+
+### Register the task definition and run it
+
+```bash
+aws ecs create-cluster --cluster-name aws-ai-league-cluster --region ap-south-1
+
+aws ecs register-task-definition \
+  --cli-input-json file://infrastructure/ecs/ecs-task-definition.json \
+  --region ap-south-1
+
+aws ecs run-task \
+  --cluster aws-ai-league-cluster \
+  --task-definition aws-ai-league-task \
+  --launch-type FARGATE \
+  --network-configuration "awsvpcConfiguration={subnets=[<public-subnet-id>],securityGroups=[<sg-id>],assignPublicIp=ENABLED}" \
+  --region ap-south-1
+```
+
+The public IP of the running task is shown in the ECS console (or via
+`aws ecs describe-tasks` → ENI → `describe-network-interfaces`). Open
+`http://<public-ip>:8501`.
+
+## 14. Detailed ECS Fargate deployment architecture
+
+| Setting | Value |
+|---|---|
+| ECS cluster | `aws-ai-league-cluster` |
+| Task definition family | `aws-ai-league-task` |
+| Launch type | AWS Fargate |
+| Network mode | `awsvpc` (task gets its own ENI) |
+| Task size | 1024 CPU units / 2048 MiB (see `ecs-task-definition.json`) |
+| Container name | `aws-ai-league` |
+| Container image | `<account-id>.dkr.ecr.ap-south-1.amazonaws.com/aws-ai-league:latest` |
+| Container port | `8501` (TCP), mapped 1:1 to the host ENI |
+| Public IP | `assignPublicIp=ENABLED` — reached directly over the internet |
+| Security group | inbound **TCP 8501** allowed; outbound open (needs HTTPS to Bedrock, ECR, CloudWatch) |
+| Region | `ap-south-1` |
+| Container env vars | `AWS_REGION=ap-south-1`, `AWS_DEFAULT_REGION=ap-south-1` |
+
+Request path: **User → public internet → ECS task ENI (security group,
+port 8501) → Streamlit in the container → Amazon Bedrock → Amazon Nova
+Pro**, with the response flowing back the same way.
+
+## 15. IAM roles
+
+Two distinct roles are attached to the task (both defined under
+`infrastructure/ecs/`). Neither contains credentials — they are assumed by
+the `ecs-tasks.amazonaws.com` service (`ecs-task-trust-policy.json`).
+
+### ECS Execution Role — `aws-ai-league-ecs-execution-role`
+
+Used by the **ECS agent / Fargate infrastructure**, not the application:
+
+* pull the Docker image from **Amazon ECR**
+* create log streams and put log events into **CloudWatch Logs**
+  (`/ecs/aws-ai-league`)
+
+This is the standard `AmazonECSTaskExecutionRolePolicy` set of permissions.
+
+### ECS Task Role — `aws-ai-league-ecs-task-role`
+
+Used by the **application code running in the container**. Its only
+permission (`ecs-bedrock-policy.json`) is to invoke Amazon Nova Pro:
+
+```json
+"Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+"Resource": [
+  "arn:aws:bedrock:*::foundation-model/amazon.nova-pro-v1:0",
+  "arn:aws:bedrock:ap-south-1:<account-id>:inference-profile/apac.amazon.nova-pro-v1:0"
+]
+```
+
+Because the container runs with a task role, `boto3`'s default credential
+provider chain resolves to temporary role credentials automatically — the
+image ships with **no keys baked in**.
+
+## 16. Amazon Bedrock & Nova Pro integration
+
+* The app talks to Bedrock through the **Converse API**
+  (`app/ai/bedrock_client.py`, `boto3` client `bedrock-runtime`).
+* The model is **Amazon Nova Pro**, accessed via the **APAC inference
+  profile** `apac.amazon.nova-pro-v1:0` (not the bare foundation-model id).
+* Region and model id are configurable via `AWS_REGION` /
+  `BEDROCK_MODEL_ID`; the defaults already match the deployment.
+* Nova Pro is **advisory only** — see sections 10–11. `DETERMINISTIC_ONLY`
+  never calls Bedrock; `HYBRID` / `NOVA_ONLY` do, one call per tick.
+* The Nova Pro inference profile must be **enabled for the account** in the
+  Bedrock console for `ap-south-1`.
+
+### Cross-region inference
+
+The `apac.*` inference profile is a **cross-region inference profile**:
+Bedrock may route a single request to any supported AWS region within the
+Asia Pacific geography to balance load and capacity, while the request
+still originates from and is billed in `ap-south-1`. This is why the IAM
+policy `Resource` for the foundation model uses a wildcard region
+(`arn:aws:bedrock:*::foundation-model/amazon.nova-pro-v1:0`) alongside the
+region-pinned inference-profile ARN — the profile ARN stays in
+`ap-south-1`, but the underlying model invocation can land in a peer
+region. No application change is needed; the profile handles routing.
+
+## 17. CloudWatch logging
+
+* Log driver: `awslogs`
+* Log group: `/ecs/aws-ai-league`
+* Stream prefix: `ecs` (→ streams named `ecs/aws-ai-league/<task-id>`)
+* Region: `ap-south-1`
+
+Streamlit's stdout/stderr and the application's own logging (model id,
+region, success/failure — **never credentials**, see
+`app/config/logging_config.py` and `app/ai/bedrock_client.py`) go here.
+Tail it with:
+
+```bash
+aws logs tail /ecs/aws-ai-league --follow --region ap-south-1
+```
+
+## 18. Security considerations
+
+* **No AWS credentials in the repository or the image.** `boto3` uses the
+  default provider chain — the ECS **task role** in production, your local
+  `~/.aws` profile in development.
+* **`.env` is git-ignored and must never be committed.** Copy
+  `.env.example` → `.env` yourself. `.env.example` holds **no secrets** —
+  only non-secret routing defaults (`AWS_REGION`, `BEDROCK_MODEL_ID`,
+  `USE_BEDROCK`). Do not add keys to it.
+* **Least-privilege IAM.** The task role can *only* invoke the Nova Pro
+  model/inference profile; the execution role only pulls the image and
+  writes logs.
+* **Network exposure.** The security group opens only **TCP 8501**.
+  Outbound is used for HTTPS to Bedrock, ECR, and CloudWatch.
+* **Logs never contain secrets** — only model id, region, and outcome.
+* `.dockerignore` keeps `.env`, `.git`, caches, and local data out of the
+  build context.
+
+## 19. Current deployment limitations
+
+The deployment is intentionally minimal — enough for a hackathon demo, not
+a production service:
+
+* **Standalone ECS task**, started with `run-task` — it is **not** managed
+  by an ECS **Service**, so there is **no auto-recovery**: if the task
+  stops or crashes it must be started again manually.
+* **Public IP can change.** The task uses `assignPublicIp=ENABLED` with no
+  Elastic IP, so stopping/recreating the task yields a new address.
+* **No Application Load Balancer**, no target group, no stable DNS name.
+* **No custom domain and no HTTPS** — traffic is plain HTTP on port 8501.
+* **No auto-scaling** — exactly one task, fixed CPU/memory.
+* **No CI/CD** — the image is built and pushed manually.
+
+## 20. Future improvements
+
+* Wrap the task in an **ECS Service** (desired count ≥ 1) for automatic
+  restart and rolling deploys.
+* Put an **Application Load Balancer** in front for a stable DNS name,
+  health checks, and **HTTPS** via ACM; move the task to a private subnet.
+* Add a **custom domain** (Route 53) and TLS termination at the ALB.
+* **Service auto-scaling** on CPU / request count.
+* A **CI/CD pipeline** (GitHub Actions → ECR → ECS deploy) to replace the
+  manual build/push.
+* Score Nova Pro recommendations against the evaluation benchmark in the
+  deployed environment (see sections 9–11).
+
+## 21. Documentation
+
+| Document | Contents |
+|---|---|
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | One-page system overview — full flow, per-tick sequence diagram, decision-resolution logic, module map |
+| [`DEMO.md`](DEMO.md) | ~5-minute guided walk-through for a review or hackathon demo |
+| [`RESULTS.md`](RESULTS.md) | Committed reference of the exact deterministic benchmark + match output |
