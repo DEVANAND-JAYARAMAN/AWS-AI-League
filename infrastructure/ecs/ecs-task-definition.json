@@ -1,0 +1,43 @@
+{
+  "family": "aws-ai-league-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::381491873985:role/aws-ai-league-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::381491873985:role/aws-ai-league-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "aws-ai-league",
+      "image": "381491873985.dkr.ecr.ap-south-1.amazonaws.com/aws-ai-league:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8501,
+          "hostPort": 8501,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "AWS_REGION",
+          "value": "ap-south-1"
+        },
+        {
+          "name": "AWS_DEFAULT_REGION",
+          "value": "ap-south-1"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/aws-ai-league",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeNovaPro",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:ap-south-1::foundation-model/amazon.nova-pro-v1:0",
+        "arn:aws:bedrock:ap-south-1:381491873985:inference-profile/apac.amazon.nova-pro-v1:0"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "ServiceName": "aws-ai-league",
+  "SourceConfiguration": {
+    "AuthenticationConfiguration": {
+      "AccessRoleArn": "arn:aws:iam::381491873985:role/aws-ai-league-apprunner-ecr-access-role"
+    },
+    "AutoDeploymentsEnabled": false,
+    "ImageRepository": {
+      "ImageIdentifier": "381491873985.dkr.ecr.ap-south-1.amazonaws.com/aws-ai-league:latest",
+      "ImageRepositoryType": "ECR",
+      "ImageConfiguration": {
+        "Port": "8501",
+        "RuntimeEnvironmentVariables": {
+          "AWS_REGION": "ap-south-1",
+          "AWS_DEFAULT_REGION": "ap-south-1"
+        }
+      }
+    }
+  },
+  "InstanceConfiguration": {
+    "Cpu": "1 vCPU",
+    "Memory": "2 GB",
+    "InstanceRoleArn": "arn:aws:iam::381491873985:role/aws-ai-league-apprunner-instance-role"
+  }
+}

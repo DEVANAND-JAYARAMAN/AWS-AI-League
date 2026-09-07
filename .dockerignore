@@ -1,0 +1,33 @@
+# Virtual environments
+.venv/
+venv/
+
+# Git
+.git/
+.gitignore
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Environment / secrets
+.env
+
+# Logs
+logs/
+
+# Test cache
+.pytest_cache/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local debug output
+nova_request.json
+nova_output.json
+output.json
