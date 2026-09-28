@@ -1,0 +1,33 @@
+{
+  "total_examples": 24,
+  "augmented_examples": 8,
+  "base_examples": 16,
+  "categories": {
+    "ATTACK": 10,
+    "DEFENSE": 8,
+    "GOALKEEPER": 3,
+    "TRANSITION": 3
+  },
+  "tactical_modes": {
+    "ATTACK": 12,
+    "DEFENSE": 12
+  },
+  "actions": {
+    "HOLD_POSITION": 2,
+    "MOVE": 10,
+    "PASS": 4,
+    "PRESS": 6,
+    "SHOOT": 2
+  },
+  "agents": {
+    "defender": 11,
+    "goalkeeper": 3,
+    "midfielder": 5,
+    "striker": 5
+  },
+  "splits": {
+    "train": 18,
+    "validation": 3,
+    "test": 3
+  }
+}

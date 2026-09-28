@@ -46,12 +46,7 @@ from ui.pitch import build_pitch_svg  # noqa: E402
 TEAM_ORDER = ["goalkeeper", "defender", "midfielder", "striker"]
 DETERMINISTIC = SimulationMode.DETERMINISTIC_ONLY.value
 
-ROLE_EMOJI = {
-    "GOALKEEPER": "🧤",
-    "DEFENDER": "🛡️",
-    "MIDFIELDER": "🎯",
-    "STRIKER": "⚡",
-}
+ROLE_EMOJI = {"GOALKEEPER": "🧤","DEFENDER": "🛡️","MIDFIELDER": "🎯","STRIKER": "⚡",}
 MODE_EMOJI = {"ATTACK": "🔴", "DEFENSE": "🔵", "TRANSITION": "🟡"}
 
 ARCH_DOT = """

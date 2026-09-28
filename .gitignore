@@ -16,6 +16,11 @@ logs/
 data/match_results/*
 !data/match_results/.gitkeep
 
+# Generated fine-tuning dataset (regenerate with scripts.generate_finetuning_dataset).
+# The small committed example dataset under data/fine_tuning/example/ is kept.
+data/fine_tuning/*.jsonl
+data/fine_tuning/dataset_stats.json
+
 # AWS
 .aws/
 

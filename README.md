@@ -812,6 +812,136 @@ python -m tests.test_hybrid   # Tests 2 & 3 make real Nova calls
 
 ---
 
+## 11a. Model Customization / Fine-Tuning (fine-tuning-ready)
+
+The `app/fine_tuning/` package makes the project **technically ready for the
+AWS AI League "Customize a Foundational Model" challenge** (customizing an
+Amazon Nova model on Amazon SageMaker AI). It turns the existing
+deterministic football brain into a supervised fine-tuning dataset and adds
+an evaluation framework to compare a future customized model against the
+deterministic baseline.
+
+> **Status — read this first.** This is a **preparation layer**. **No model
+> has been fine-tuned, no SageMaker training job has run, and no accuracy
+> improvement is claimed.** Until a real competition training run and
+> evaluation happen, the customized-model path reports `NOT RUN`. The correct
+> terms here are *fine-tuning-ready*, *model-customization pipeline*,
+> *baseline*, and *evaluation framework*.
+
+### Architecture
+
+```
+GameState
+   |
+   v
+Deterministic Football Intelligence   (AgentCoordinator -> TeamCoordinator)
+   |                                    << unchanged; the source of truth >>
+   +------------------------------+
+   |                              |
+   v                              v
+Baseline Decision            Training Example Generator   app/fine_tuning/example_generator.py
+   |                              |
+   |                              v
+   |                         Fine-Tuning Dataset (train/val/test)   dataset_builder.py + validation.py
+   |                              |
+   |                              v
+   |                         SageMaker AI Customization / Fine-Tuning   (prepare_sagemaker_job.py template)
+   |                              |
+   |                              v
+   |                         Customized Nova Model
+   |                              |
+   |                              v
+   |                         Inference Adapter        custom_model_client.py (ModelProvider)
+   |                              |
+   |                              v
+   |                         Tactical Recommendation
+   |                              |
+   +--------------+---------------+
+                  |
+                  v
+        Evaluation Benchmark        the SAME 16 scenarios   evaluation.py
+                  |
+                  v
+        Deterministic vs Model      (baseline vs Base Nova vs Customized Nova)
+```
+
+The **existing 16-scenario benchmark is the baseline** and is never modified
+to flatter a model.
+
+### How it works
+
+1. **Existing deterministic football brain.** Every training label is
+   produced by the real `AgentCoordinator` / `TeamCoordinator` pipeline -
+   labels are never hand-written, and no football logic is re-implemented.
+2. **Dataset generation.** The 16 benchmark scenarios are the anchor
+   examples; the rest are deterministic, seeded positional variations,
+   each re-labelled by the deterministic engine. Size is configurable
+   (`--size` / `DATASET_SIZE`) and modest by default.
+3. **SageMaker AI customization.** `prepare_sagemaker_job.py` writes a job
+   *template* full of placeholders. It launches nothing and spends nothing;
+   the official model id, training method, IO format, and hyperparameters
+   are filled in inside the competition's Workshop Studio environment.
+4. **Customized foundation model.** Consumed through the `NOVA_CUSTOM`
+   provider once its model id exists.
+5. **Evaluation.** `evaluate_custom_model.py` scores any provider against
+   the same 16 scenarios and reports real numbers only — `NOT RUN` otherwise.
+6. **Integration with the app.** The existing `app/ai/bedrock_nova.py` Nova
+   Pro integration is untouched; the new `ModelProvider` enum
+   (`DETERMINISTIC` / `NOVA_BASE` / `NOVA_CUSTOM`) lets all three brains be
+   compared through one `analyze(game_state)` call.
+
+### Commands
+
+```powershell
+# 1. Generate a dataset from the deterministic brain (no AWS)
+python -m scripts.generate_finetuning_dataset --size 120
+#    -> data/fine_tuning/{train,validation,test}.jsonl + dataset_stats.json
+
+# 2. Validate the generated dataset (schema + test-set isolation)
+python -m scripts.validate_finetuning_dataset
+
+# 3. Write a SageMaker AI job template (placeholders only; no AWS calls)
+python -m scripts.prepare_sagemaker_job
+#    -> infrastructure/sagemaker/finetuning-job-template.json
+
+# 4. Evaluate providers against the benchmark (offline by default;
+#    NOVA_CUSTOM reports NOT RUN until a model id is supplied)
+python -m scripts.evaluate_custom_model
+python -m scripts.evaluate_custom_model --providers DETERMINISTIC NOVA_CUSTOM --custom-model-id <id>
+
+# 5. New offline test suite for the fine-tuning layer
+python -m tests.test_finetuning
+```
+
+A small committed **example / development dataset** lives in
+`data/fine_tuning/example/` (clearly labelled — not the final competition
+dataset). Full package docs: [`app/fine_tuning/README.md`](app/fine_tuning/README.md).
+
+### Example evaluation report shape
+
+```
+# MODEL EVALUATION
+
+## Deterministic Baseline
+Scenarios: 16
+Full agreement: 16
+Tactical mode accuracy: 100.0%
+Agent accuracy: 100.0%
+Action accuracy: 100.0%
+
+## Customized Nova
+Status: NOT RUN
+Reason: NOVA_CUSTOM has no customized model id yet
+
+## Agreement vs Deterministic Baseline
+Deterministic vs Customized Nova: NOT RUN
+```
+
+Numbers other than the deterministic baseline are shown **only when a model
+actually ran**. They are never fabricated.
+
+---
+
 ## 12. Match Analytics
 
 The `app/analytics/` package turns a `HybridMatchResult` into three

@@ -1,0 +1,31 @@
+{
+  "_comment": "TEMPLATE ONLY. This does not launch a job. Fill in the REPLACE_WITH_COMPETITION_VALUE placeholders inside the official AWS AI League Workshop Studio environment. The base model, training method, hyperparameters, and dataset IO format are all competition-specific and are NOT assumed here.",
+  "status": "NOT SUBMITTED",
+  "job": {
+    "job_name": "REPLACE_WITH_COMPETITION_VALUE",
+    "base_model_id": "REPLACE_WITH_COMPETITION_VALUE",
+    "customization_type": "FINE_TUNING",
+    "region": "REPLACE_WITH_COMPETITION_VALUE",
+    "role_arn": "REPLACE_WITH_COMPETITION_VALUE"
+  },
+  "data": {
+    "local_train": "D:\\AWS-AI-League\\data\\fine_tuning\\train.jsonl",
+    "local_validation": "D:\\AWS-AI-League\\data\\fine_tuning\\validation.jsonl",
+    "local_test": "D:\\AWS-AI-League\\data\\fine_tuning\\test.jsonl",
+    "train_s3_uri": "REPLACE_WITH_COMPETITION_VALUE",
+    "validation_s3_uri": "REPLACE_WITH_COMPETITION_VALUE",
+    "output_s3_uri": "REPLACE_WITH_COMPETITION_VALUE",
+    "format_note": "Records are generated in a Bedrock Converse-style conversational shape (system + user + assistant). Remap to the competition's required format if it differs."
+  },
+  "hyperparameters": {
+    "_note": "Competition-specific. Do not assume values."
+  },
+  "next_steps": [
+    "1. Generate + validate the dataset locally.",
+    "2. Confirm the official Nova base model id and training method.",
+    "3. Upload the JSONL splits to the S3 bucket the competition provides.",
+    "4. Fill in the placeholders above.",
+    "5. Submit the job from inside the Workshop Studio environment.",
+    "6. After training, run 'python -m scripts.evaluate_custom_model' with the customized model id."
+  ]
+}

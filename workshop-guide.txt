@@ -1,0 +1,1179 @@
+Workshop Studio
+
+
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+Module 1: Model Training using Amazon SageMaker AI
+Module 2: Deploy Model to Amazon Bedrock
+Module 3: Register and Submit Your Model
+
+Module 4: Improving your model
+Workshop catalog in AWS Builder Center
+AWS AI League - Model customization with Amazon Nova
+AWS AI League - Model customization with Amazon Nova
+AWS AI League - Model customization with Amazon Nova
+Welcome to the AWS AI League
+Compete head-to-head with other builders to customize AI models in this hands-on workshop. You'll tackle real-world challenges as you experiment with model customization and fine-tune models to improve accuracy, clarity, and relevance. Learn just how accessible and cost-effective AI customization can be as you customize Amazon Nova Micro, deploy it to Amazon Bedrock, and compete on the leaderboard.
+
+Whether you're chasing the championship or sharpening your AI expertise, this session delivers practical techniques you can apply immediately.
+
+What You'll Learn
+In this workshop, you will:
+
+Fine-tune Amazon Nova Micro using Amazon SageMaker AI with training datasets
+Deploy your customized model to Amazon Bedrock for serverless inference
+Register and submit your model to the AI League leaderboard
+Iterate and improve your model using data curation and hyperparameter tuning techniques
+Apply practical AI customization skills to real-world challenges
+Workshop Modules
+Model Training - Fine-tune Amazon Nova Micro with sample datasets using SageMaker AI (~20 minutes)
+Model Deployment - Deploy your trained model to Amazon Bedrock (~15 minutes)
+Registration & Submission - Register your model and submit to the leaderboard
+Model Improvement - Learn techniques to enhance accuracy and climb the rankings
+Estimated Duration: 2-3 hours
+
+Target Audience
+This workshop is designed for:
+
+Developers interested in AI model customization
+ML practitioners exploring foundation model fine-tuning
+Anyone curious about competing in AI challenges
+No prior machine learning experience required - we'll guide you through each step.
+
+Prerequisites
+Basic familiarity with AWS Console navigation
+Understanding of JSON file formats for training data
+Access to an AWS-hosted AI League event (Workshop Studio provisioned account required)
+Architecture
+AWS AI League workflow diagram showing training, deployment, and leaderboard submission flow
+
+AWS AI League Fine-Tuning Challenge banner with model training and leaderboard graphics
+
+Next
+© 2008 - 2026, Amazon Web Services, Inc. or its affiliates. All rights reserved.
+Privacy policy
+Terms of use
+Cookie preferences
+
+
+
+
+---------------------------
+
+Workshop Studio
+
+
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+Module 1: Model Training using Amazon SageMaker AI
+Module 2: Deploy Model to Amazon Bedrock
+Module 3: Register and Submit Your Model
+
+Module 4: Improving your model
+Workshop catalog in AWS Builder Center
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+Getting Started
+This workshop requires an AWS-hosted event with Workshop Studio provisioned accounts. It cannot be completed using personal AWS accounts due to specialized infrastructure and custom model requirements.
+This workshop provides access to a temporary AWS account with pre-provisioned infrastructure and IAM policies needed to complete all modules. The goal of this section is to help you access your workshop AWS account.
+
+Step 1 - Sign in
+Select AWS Builder ID to sign in or sign up.
+
+Workshop Studio sign-in page with AWS Builder ID option
+
+Step 2 - Builder Id Sign in / Sign up
+Enter your email for your AWS Builder ID to sign in or sign up. Then select Continue
+
+AWS Builder ID sign-in form with email input field
+
+Step 3 - Add Event Code
+Enter the event code provided by your workshop facilitator.
+
+Event code entry form
+
+Step 4 - Review Terms
+Review the terms and conditions of the event. Do not upload any personal or confidential information in the account. The AWS account will only be available for the duration of this workshop and you will not be able to retain access after the workshop is complete. Backup any materials you wish to keep access to after the workshop. The content and instructions in this written workshop guide will be publicly available after the event, so you can refer back to it later. Any pre-provisioned infrastructure will be deployed to a specific region. Check your workshop content to determine whether other regions will be used.
+
+Once reviewed:
+
+Check the box I agree to the terms and conditions
+Select Join event
+Step 5 - Review Event Outputs
+In the left sidebar, scroll down to the Event outputs section. You'll see two important outputs:
+
+AwsAccountId: Your AWS Account ID for this workshop
+AccountAuthorizationCodeDoNotShare: A 32-character access code needed to register your model on the AI League leaderboard
+Copy both values using the copy icon beside each one, and paste them into a notepad or text editor. You need both in Module 3 when you register your model.
+
+Workshop Studio event outputs listing AwsAccountId and AccountAuthorizationCodeDoNotShare, each with a copy button
+
+Step 6 - Access AWS Account
+Once you have joined the event, you will be able to access your AWS account. Select Open AWS console (us-east-1) to navigate to the AWS console.
+
+Workshop Studio AWS account access section with Open AWS console button
+
+Step 7 - Confirm Console Access
+Confirm you have access to the AWS console before selecting Next
+
+The AWS Console link will open the AWS Management Console home page. This is the standard AWS Console that provides access to each service. Please note that the infrastructure associated with the workshop will be deployed to a specific region and can be only accessed from that region.
+
+AWS Management Console home page
+
+Previous
+Next
+© 2008 - 2026, Amazon Web Services, Inc. or its affiliates. All rights reserved.
+Privacy policy
+Terms of use
+Cookie preferences
+
+Workshop Studio
+
+
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+Module 1: Model Training using Amazon SageMaker AI
+Module 2: Deploy Model to Amazon Bedrock
+Module 3: Register and Submit Your Model
+
+Module 4: Improving your model
+Workshop catalog in AWS Builder Center
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+Getting Started
+This workshop requires an AWS-hosted event with Workshop Studio provisioned accounts. It cannot be completed using personal AWS accounts due to specialized infrastructure and custom model requirements.
+This workshop provides access to a temporary AWS account with pre-provisioned infrastructure and IAM policies needed to complete all modules. The goal of this section is to help you access your workshop AWS account.
+
+Step 1 - Sign in
+Select AWS Builder ID to sign in or sign up.
+
+Workshop Studio sign-in page with AWS Builder ID option
+
+Step 2 - Builder Id Sign in / Sign up
+Enter your email for your AWS Builder ID to sign in or sign up. Then select Continue
+
+AWS Builder ID sign-in form with email input field
+
+Step 3 - Add Event Code
+Enter the event code provided by your workshop facilitator.
+
+Event code entry form
+
+Step 4 - Review Terms
+Review the terms and conditions of the event. Do not upload any personal or confidential information in the account. The AWS account will only be available for the duration of this workshop and you will not be able to retain access after the workshop is complete. Backup any materials you wish to keep access to after the workshop. The content and instructions in this written workshop guide will be publicly available after the event, so you can refer back to it later. Any pre-provisioned infrastructure will be deployed to a specific region. Check your workshop content to determine whether other regions will be used.
+
+Once reviewed:
+
+Check the box I agree to the terms and conditions
+Select Join event
+Step 5 - Review Event Outputs
+In the left sidebar, scroll down to the Event outputs section. You'll see two important outputs:
+
+AwsAccountId: Your AWS Account ID for this workshop
+AccountAuthorizationCodeDoNotShare: A 32-character access code needed to register your model on the AI League leaderboard
+Copy both values using the copy icon beside each one, and paste them into a notepad or text editor. You need both in Module 3 when you register your model.
+
+Workshop Studio event outputs listing AwsAccountId and AccountAuthorizationCodeDoNotShare, each with a copy button
+
+Step 6 - Access AWS Account
+Once you have joined the event, you will be able to access your AWS account. Select Open AWS console (us-east-1) to navigate to the AWS console.
+
+Workshop Studio AWS account access section with Open AWS console button
+
+Step 7 - Confirm Console Access
+Confirm you have access to the AWS console before selecting Next
+
+The AWS Console link will open the AWS Management Console home page. This is the standard AWS Console that provides access to each service. Please note that the infrastructure associated with the workshop will be deployed to a specific region and can be only accessed from that region.
+
+AWS Management Console home page
+
+Previous
+Next
+© 2008 - 2026, Amazon Web Services, Inc. or its affiliates. All rights reserved.
+Privacy policy
+Terms of use
+Cookie preferences
+
+
+
+Workshop Studio
+
+
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+Module 1: Model Training using Amazon SageMaker AI
+Module 2: Deploy Model to Amazon Bedrock
+Module 3: Register and Submit Your Model
+
+Module 4: Improving your model
+Workshop catalog in AWS Builder Center
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+Getting Started
+This workshop requires an AWS-hosted event with Workshop Studio provisioned accounts. It cannot be completed using personal AWS accounts due to specialized infrastructure and custom model requirements.
+This workshop provides access to a temporary AWS account with pre-provisioned infrastructure and IAM policies needed to complete all modules. The goal of this section is to help you access your workshop AWS account.
+
+Step 1 - Sign in
+Select AWS Builder ID to sign in or sign up.
+
+Workshop Studio sign-in page with AWS Builder ID option
+
+Step 2 - Builder Id Sign in / Sign up
+Enter your email for your AWS Builder ID to sign in or sign up. Then select Continue
+
+AWS Builder ID sign-in form with email input field
+
+Step 3 - Add Event Code
+Enter the event code provided by your workshop facilitator.
+
+Event code entry form
+
+Step 4 - Review Terms
+Review the terms and conditions of the event. Do not upload any personal or confidential information in the account. The AWS account will only be available for the duration of this workshop and you will not be able to retain access after the workshop is complete. Backup any materials you wish to keep access to after the workshop. The content and instructions in this written workshop guide will be publicly available after the event, so you can refer back to it later. Any pre-provisioned infrastructure will be deployed to a specific region. Check your workshop content to determine whether other regions will be used.
+
+Once reviewed:
+
+Check the box I agree to the terms and conditions
+Select Join event
+Step 5 - Review Event Outputs
+In the left sidebar, scroll down to the Event outputs section. You'll see two important outputs:
+
+AwsAccountId: Your AWS Account ID for this workshop
+AccountAuthorizationCodeDoNotShare: A 32-character access code needed to register your model on the AI League leaderboard
+Copy both values using the copy icon beside each one, and paste them into a notepad or text editor. You need both in Module 3 when you register your model.
+
+Workshop Studio event outputs listing AwsAccountId and AccountAuthorizationCodeDoNotShare, each with a copy button
+
+Step 6 - Access AWS Account
+Once you have joined the event, you will be able to access your AWS account. Select Open AWS console (us-east-1) to navigate to the AWS console.
+
+Workshop Studio AWS account access section with Open AWS console button
+
+Step 7 - Confirm Console Access
+Confirm you have access to the AWS console before selecting Next
+
+The AWS Console link will open the AWS Management Console home page. This is the standard AWS Console that provides access to each service. Please note that the infrastructure associated with the workshop will be deployed to a specific region and can be only accessed from that region.
+
+AWS Management Console home page
+
+Previous
+Next
+© 2008 - 2026, Amazon Web Services, Inc. or its affiliates. All rights reserved.
+Privacy policy
+Terms of use
+Cookie preferencesWorkshop Studio
+
+
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+Module 1: Model Training using Amazon SageMaker AI
+Module 2: Deploy Model to Amazon Bedrock
+Module 3: Register and Submit Your Model
+
+Module 4: Improving your model
+Workshop catalog in AWS Builder Center
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+Getting Started
+This workshop requires an AWS-hosted event with Workshop Studio provisioned accounts. It cannot be completed using personal AWS accounts due to specialized infrastructure and custom model requirements.
+This workshop provides access to a temporary AWS account with pre-provisioned infrastructure and IAM policies needed to complete all modules. The goal of this section is to help you access your workshop AWS account.
+
+Step 1 - Sign in
+Select AWS Builder ID to sign in or sign up.
+
+Workshop Studio sign-in page with AWS Builder ID option
+
+Step 2 - Builder Id Sign in / Sign up
+Enter your email for your AWS Builder ID to sign in or sign up. Then select Continue
+
+AWS Builder ID sign-in form with email input field
+
+Step 3 - Add Event Code
+Enter the event code provided by your workshop facilitator.
+
+Event code entry form
+
+Step 4 - Review Terms
+Review the terms and conditions of the event. Do not upload any personal or confidential information in the account. The AWS account will only be available for the duration of this workshop and you will not be able to retain access after the workshop is complete. Backup any materials you wish to keep access to after the workshop. The content and instructions in this written workshop guide will be publicly available after the event, so you can refer back to it later. Any pre-provisioned infrastructure will be deployed to a specific region. Check your workshop content to determine whether other regions will be used.
+
+Once reviewed:
+
+Check the box I agree to the terms and conditions
+Select Join event
+Step 5 - Review Event Outputs
+In the left sidebar, scroll down to the Event outputs section. You'll see two important outputs:
+
+AwsAccountId: Your AWS Account ID for this workshop
+AccountAuthorizationCodeDoNotShare: A 32-character access code needed to register your model on the AI League leaderboard
+Copy both values using the copy icon beside each one, and paste them into a notepad or text editor. You need both in Module 3 when you register your model.
+
+Workshop Studio event outputs listing AwsAccountId and AccountAuthorizationCodeDoNotShare, each with a copy button
+
+Step 6 - Access AWS Account
+Once you have joined the event, you will be able to access your AWS account. Select Open AWS console (us-east-1) to navigate to the AWS console.
+
+Workshop Studio AWS account access section with Open AWS console button
+
+Step 7 - Confirm Console Access
+Confirm you have access to the AWS console before selecting Next
+
+The AWS Console link will open the AWS Management Console home page. This is the standard AWS Console that provides access to each service. Please note that the infrastructure associated with the workshop will be deployed to a specific region and can be only accessed from that region.
+
+AWS Management Console home page
+
+Previous
+Next
+© 2008 - 2026, Amazon Web Services, Inc. or its affiliates. All rights reserved.
+Privacy policy
+Terms of use
+Cookie preferences
+
+
+---------------------------------------
+
+
+Workshop Studio
+
+
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+Module 1: Model Training using Amazon SageMaker AI
+Module 2: Deploy Model to Amazon Bedrock
+Module 3: Register and Submit Your Model
+
+Module 4: Improving your model
+Workshop catalog in AWS Builder Center
+AWS AI League - Model customization with Amazon Nova
+Module 1: Model Training using Amazon SageMaker AI
+AWS AI League - Model customization with Amazon Nova
+Module 1: Model Training using Amazon SageMaker AI
+Module 1: Model Training using Amazon SageMaker AI
+In this module, we'll use Amazon SageMaker Studio to fine-tune a pre-trained model with your training data. Amazon SageMaker Studio is a single web-based interface for end-to-end AI model development. Visit the Amazon SageMaker Studio product page  to learn more.
+
+Step 1 - Navigate to Amazon SageMaker Studio
+In the top search bar, search for Amazon SageMaker AI and select it.
+
+AWS Console search results with Amazon SageMaker AI highlighted
+
+Under Applications and IDEs in the left menu, select SageMaker Studio.
+
+SageMaker AI left menu with SageMaker Studio highlighted under Applications and IDEs
+
+Verify your user profile is AILeagueUser then select Open Studio.
+
+This page will open as a new tab. Keep the current page open as we will use it later
+SageMaker Studio Get Started panel with AILeagueUser profile and Open Studio highlighted
+
+Select Skip Tour when the SageMaker Studio welcome dialog appears.
+
+SageMaker Studio welcome dialog with Skip Tour highlighted
+
+Step 2 - Navigate to Models
+In the left menu, expand Models and select JumpStart models.
+
+We'll use SageMaker Models to fine-tune a pre-trained model with your training data.
+
+Left navigation with Models expanded and JumpStart models highlighted
+
+SageMaker Models page showing available foundation models
+
+Step 3 - Access the Amazon Nova Micro model
+For this workshop, we'll use Amazon Nova Micro Frontier AI model.
+
+In the Find models search box, search for Nova Micro
+Select the Nova Micro card as shown in the image below.
+Models page with Nova Micro entered in the Find models search box and the Nova Micro card highlighted
+
+Step 4 - Customize your model
+Click the Customize model dropdown in the upper right corner.
+
+Amazon Nova Micro model page with Customize dropdown menu
+
+Select Customize with UI to begin the customization process.
+
+Customize with UI option in dropdown menu
+
+Step 5 - Configure customization settings
+You'll see the Model customization screen. Enter a Custom model name using the format model-[XX] (e.g., model-01, model-02). Then under Model and technique:
+
+Verify Base model shows Nova Micro
+Leave Customization technique on Supervised Fine-Tuning
+Leave Training type on LoRA
+Leave Sequence length on 8K
+Why LoRA and 8K? LoRA (Low-Rank Adaptation) trains a small set of adapter weights instead of every parameter in the model, which is cheaper than full-rank training and less likely to overfit on a dataset this small. 8K caps each training example at 8,192 tokens, comfortably more than a short prompt-and-response pair needs. Context length also influences which instance types your job runs on, so 8K keeps you on the cost-optimized path. Raise it only if your training examples are genuinely longer than that.
+Job names must be unique or the job will fail. Increment the model number (XX) for each new training job.
+Model customization screen with the Custom model name field and Supervised Fine-Tuning option highlighted
+
+Step 6 - Download sample datasets
+To get started quickly, download the sample dataset. It is already formatted for Nova model customization, so you can upload it as-is.
+
+Download the sample dataset: sample.jsonl 
+Upload that file in the next step
+This sample exists to get you a trained model quickly, not to win. It is general-purpose instruction data, so expect a modest first score. Improving it is the whole point of Module 4.
+Understanding the dataset format
+Nova customization expects JSONL: one complete JSON object per line, no commas between lines, no wrapping array. Here is one record from the sample file, pretty-printed so you can read it:
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+{
+  "schemaVersion": "bedrock-conversation-2024",
+  "system": [
+    {
+      "text": "You are a helpful assistant that answers questions accurately and concisely."
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "When did Virgin Australia start operating?\n\nVirgin Australia, the trading name of Virgin Australia Airlines Pty Ltd, is an Australian-based airline. It is the largest airline by fleet size to use the Virgin brand. It commenced services on 31 August 2000 as Virgin Blue, with two aircraft on a single route. It suddenly found itself as a major airline in Australia's domestic market after the collapse of Ansett Australia in September 2001. The airline has since grown to directly serve 32 cities in Australia, from hubs in Brisbane, Melbourne and Sydney."
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "Virgin Australia commenced services on 31 August 2000 as Virgin Blue, with two aircraft on a single route."
+        }
+      ]
+    }
+  ]
+}
+
+Reading that record field by field:
+
+schemaVersion labels the format. Leave it as bedrock-conversation-2024.
+system is optional, and it is where persistent instructions belong: output format, persona, domain context. Keep it short, or leave it out. The leaderboard sends only the question when it evaluates your model, with no system prompt, so anything you rely on here will be missing at scoring time. Behaviour you want scored has to be learned from the user turn alone.
+messages is the training pair. Only user and assistant roles are supported, the first turn must be user, and the last must be assistant. Both turns nest their text inside a content array, which is why the structure looks deeper than it first appears.
+\n\n in the user turn separates the question from the passage it depends on. There is no separate field for supporting text, so anything the answer relies on has to live in the user turn.
+Some strings are reserved and will fail your training job if they appear anywhere in a user or system prompt: User:, Bot:, Assistant:, System:, <image>, <video>, and [EOS]. If your data needs them, substitute wording that means the same thing.
+Nova Micro accepts up to 20,000 records and needs at least 100, since smaller datasets fail during training. AWS recommends at least 200 samples for each task you want the model to learn. Grow it from there once you can see what is working, bearing in mind that a larger dataset means a longer training run. Full requirements are in Preparing data for fine-tuning .
+
+When you build your own dataset in Module 4, reuse this structure exactly. Those three fields are all there is, so the only thing to get right is the message pairs.
+
+The sample dataset is derived from the databricks-dolly-15k  dataset, Copyright (2023) Databricks, Inc., used under the CC BY-SA 3.0  licence. It has been modified: a subset of records was selected and reformatted into the bedrock-conversation-2024 structure Nova requires. Portions derive from Wikipedia, Copyright Wikipedia editors and contributors, also under CC BY-SA 3.0. The modified dataset remains under CC BY-SA 3.0.
+Step 7 - Upload your dataset
+Scroll down to the Dataset and output section and click Upload files, then choose your training dataset. On your first run that is the sample.jsonl file from Step 6. When you come back with your own dataset in Module 4, upload that instead.
+
+Dataset and output section with the Upload files button highlighted
+
+Step 8 - Select your dataset file
+In the file browser, select your .jsonl file, then click Open.
+
+File browser with a sample .jsonl file selected and the Open button highlighted
+
+Step 9 - Configure and name your dataset
+Click the blue Save button to configure your dataset.
+
+Uploaded dataset file row with the Save button highlighted
+
+Enter a Dataset name using the format: dataset-[XX] (e.g., dataset-01, dataset-02)
+
+Click Create in the bottom right to confirm.
+
+Only letters, numbers, and hyphens are allowed in the dataset name
+Upload dataset dialog with the Dataset name field and Create button highlighted
+
+⚠️ Troubleshooting: Dataset upload failed
+Wait for the dataset upload to complete. Once successful, you'll see a confirmation message.
+
+Dataset saved successfully, showing a green check beside the dataset name
+
+Step 10 - Configure output artifact location
+Still in the Dataset and output section, the Output artifact location (S3 URI) field is automatically populated with the default SageMaker bucket path: s3://sagemaker-<region>-<account-id>/model-customization/output-artifacts/. This bucket is created for your SageMaker Studio domain and will store your training job outputs.
+
+Output artifact location field pre-filled with the default SageMaker bucket path
+
+Step 11 - Choose training environment
+Expand the Compute section and verify Run on SageMaker Training jobs is selected under Choose an environment.
+
+Compute section with Run on SageMaker Training jobs selected
+
+Step 12 - Configure hyperparameters and submit
+Expand the Hyperparameters section. The values are already pre-filled with sensible defaults:
+
+Batch size: 64 - total samples per step
+Number of epochs: 2 - how many passes the model makes over your data (the form accepts 1 to 100, but AWS recommends 5 or fewer)
+Learning rate: 0.00001 - how fast the model updates from data
+Expanding Advanced hyperparameters reveals Alpha value, Learning rate ratio, Maximum Context Length, Warmup steps, and Minimum learning rate.
+
+Leave everything at its default for your first training job. The goal right now is simply to get a model onto the leaderboard. Tuning these values is how you climb it, and Module 4: Improving your model explains what each one does and how to experiment with them.
+Click the Submit button at the bottom to start your training job.
+
+⚠️ Troubleshooting: Concurrent job limit reached
+⚠️ Troubleshooting: MLflow App is in 'Creating' state
+Hyperparameters section with Number of epochs and Advanced hyperparameters highlighted
+
+Step 13 - Monitor your training job
+Congratulations! You successfully started your training job. The Status will show "In progress..." while your model is being trained. Training should take approximately 20-25 minutes with the sample dataset. Training time may vary depending on your dataset size and parameters.
+
+Training job status showing In Progress with progress bar
+
+Monitor your training job until the Status shows "Completed". Once complete, you'll move to Module 2 to deploy your model
+
+While you wait for your job to complete
+Navigate to Module 4: Improving your model to learn optimization strategies for your next submission
+⚠️ Troubleshooting: Training job failed
+Training job status showing Completed with success message
+
+Step 14 - Initiate deployment to Amazon Bedrock
+Once your training job completes successfully, click the View custom model button to begin deploying your fine-tuned model to Amazon Bedrock. Module 2 walks through deploying it.
+
+In Module 2, you'll monitor the deployment progress and retrieve your deployment ARN needed for leaderboard registration.
+
+Training completion screen with View custom model button highlighted
+
+Previous
+Next
+© 2008 - 2026, Amazon Web Services, Inc. or its affiliates. All rights reserved.
+Privacy policy
+Terms of use
+Cookie preferences
+
+
+---------------------------------------
+
+
+
+Workshop Studio
+
+
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+Module 1: Model Training using Amazon SageMaker AI
+Module 2: Deploy Model to Amazon Bedrock
+Module 3: Register and Submit Your Model
+
+Module 4: Improving your model
+Workshop catalog in AWS Builder Center
+AWS AI League - Model customization with Amazon Nova
+Module 2: Deploy Model to Amazon Bedrock
+AWS AI League - Model customization with Amazon Nova
+Module 2: Deploy Model to Amazon Bedrock
+Module 2: Deploy Model to Amazon Bedrock
+Now that your training job is complete, you'll deploy the fine-tuned model to Amazon Bedrock for inference. Amazon Bedrock Custom Model Import allows you to bring your own fine-tuned models and deploy them as fully managed endpoints. This provides on-demand inference with automatic scaling, built-in security, and seamless integration with other AWS services, without the need to manage infrastructure.
+
+Benefits of deploying to Amazon Bedrock:
+
+Serverless inference: No infrastructure to manage or scale
+Pay-per-use pricing: Only pay for the inference requests you make
+Enterprise security: Built-in encryption and access controls
+Easy integration: Use the same Bedrock API for all your models
+Step 1 - Open the Actions menu
+After clicking "View custom model" in Module 1, you'll land on your custom model page. Click the Actions dropdown in the upper right corner.
+
+Custom model page with Actions dropdown in the upper right
+
+Step 2 - Select Deploy with Bedrock
+From the dropdown menu, select Deploy with Bedrock.
+
+Choose Deploy with Bedrock, not Deploy with SageMaker. The leaderboard evaluates a Bedrock deployment ARN, and a SageMaker endpoint will be rejected at submission.
+Actions menu expanded with Deploy with Bedrock highlighted
+
+Step 3 - Configure the deployment
+In the Deploy to Amazon Bedrock dialog:
+
+Leave On-Demand selected as the deployment option
+Enter a Deployment name using the format: deployment-[XX] (e.g., deployment-01, deployment-02)
+Leave IAM role set to SageMakerExecutionRole (default)
+Click Deploy
+Deployment names must be unique. Valid characters are A-Z, 0-9, underscore and hyphen.
+Deploy to Amazon Bedrock dialog showing On-Demand selected, deployment name, and IAM role
+
+Step 4 - Monitor deployment status
+After clicking Deploy, you'll land on the Deployments tab of your custom model. Your deployment shows status InProgress with Service listed as Bedrock while the endpoint is provisioned. This typically takes 10-15 minutes.
+
+Deployments tab showing deployment-01 with InProgress status
+
+Once complete, the status changes to In Service.
+
+Deployments tab showing deployment-01 with In Service status
+
+Step 5 - Open deployment details
+Click View details on your deployment card to open the deployment details page and retrieve your deployment ARN.
+
+Deployment card with View details link
+
+Step 6 - Copy the Deployment ARN and test your model
+On the deployment details page, verify the status shows In service, then copy the Deployment ARN highlighted below. You'll need it to register your model in Module 3.
+
+Copy the Deployment ARN, not the Model ARN. Both appear side by side on this page and they look almost identical. The Deployment ARN contains custom-model-deployment/, while the Model ARN contains custom-model/imported/. Submitting the Model ARN will cause your leaderboard evaluation to fail.
+Testing here is optional but recommended. A quick prompt confirms your model responds the way you expect before it is scored.
+Below the summary, the Playground section lets you test your fine-tuned model before you submit it. Enter a prompt and click Run. You can also adjust:
+
+Length - Maximum output tokens (default 512)
+Randomness and diversity - Temperature, Top P, Top K
+Deployment details page with the Deployment ARN highlighted, and the Playground section below
+
+Troubleshooting
+Cleaning up deployments and models
+Deployment fails on a quota limit
+I cannot find a Deployment ARN
+My deployment is taking a long time
+Congratulations! Your model is now deployed to Amazon Bedrock and ready for evaluation.
+
+Make sure you've copied your Deployment ARN from Step 6 - you'll need it to submit your model in Module 3.
+Proceed to Module 3: Register and Submit Model to submit your deployment for leaderboard evaluation.
+
+Previous
+Next
+© 2008 - 2026, Amazon Web Services, Inc. or its affiliates. All rights reserved.
+Privacy policy
+Terms of use
+Cookie preferences
+
+
+
+
+-------------------------------------------------
+
+
+Workshop Studio
+
+
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+Module 1: Model Training using Amazon SageMaker AI
+Module 2: Deploy Model to Amazon Bedrock
+Module 3: Register and Submit Your Model
+
+Module 4: Improving your model
+Workshop catalog in AWS Builder Center
+AWS AI League - Model customization with Amazon Nova
+Module 3: Register and Submit Your Model
+AWS AI League - Model customization with Amazon Nova
+Module 3: Register and Submit Your Model
+Module 3: Register and Submit Your Model
+Step 1. Navigate to the AWS AI League Leaderboard website
+Access AI League
+
+Step 2: Sign in with AWS Builder ID
+Select Sign in with AWS Builder ID and enter your AWS Builder ID credentials to sign in.
+
+AI League leaderboard homepage with participant rankings
+
+Step 3: Join the AI League Leaderboard
+Update the Event ID to the workshop event code provided to you (or contact your event administrator)
+Update your AWS Account ID
+Update the Authorization Code
+Update your profile name
+Select Join
+If you did not copy the authorization code or account id revisit Step 5 of Getting Started
+AWS Builder ID sign-in page for AI League
+
+Step 4: Update your Trainer Profile
+In the upper right corner, click your profile name and select Profile
+Optionally, select Change Avatar to customize your avatar design
+You can also click the pencil icon next to your display name to edit your display alias
+Profile avatar selection page
+
+Step 5: Register your model
+Select Artifact Management
+Select Register New Artifact
+Register Artifact button in navigation menu
+
+Complete the registration form:
+
+Model Name: Use the format model-[XX] (e.g., model-01, model-02)
+Deployment ARN: Paste your Bedrock deployment ARN from Module 2. This will be in the format: arn:aws:bedrock:<region>:<account-id>:custom-model-deployment/<deployment-id>
+Select Register Artifact to complete the registration
+Model registration form with fields for model name and Bedrock deployment ARN
+
+Once registered successfully, you'll see a confirmation message:
+
+Model registration success confirmation message
+
+Step 6: Submit your model
+In the left navigation menu, select Leaderboard Submission
+Click the Submit your artifact button in the upper right corner
+Submit your artifact button in upper right corner
+
+In the Choose artifact to submit section, click the dropdown menu
+Search for or select your registered artifact (it will show your model name and Bedrock deployment ARN)
+Click Next
+Artifact selection dropdown showing registered model with Bedrock deployment ARN
+
+Review your submission details and click Submit
+Submission review page with model details and Submit button
+
+Submission success confirmation message
+
+Congratulations!
+Your model has been submitted successfully. Results will be posted to the leaderboard within 15 minutes.
+Leaderboard showing participant rankings with submitted model highlighted in second place
+
+Your model is now live on the leaderboard! You've successfully completed the full workflow: training a custom Amazon Nova Micro model, deploying it to Bedrock, and submitting it for evaluation.
+
+In Module 4, you'll learn techniques to enhance your model's accuracy and climb higher on the leaderboard. Let's keep going!
+
+Previous
+Next
+© 2008 - 2026, Amazon Web Services, Inc. or its affiliates. All rights reserved.
+Privacy policy
+Terms of use
+Cookie preferences
+
+
+
+-------------------------------------------------------
+
+
+
+Workshop Studio
+
+
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+Module 1: Model Training using Amazon SageMaker AI
+Module 2: Deploy Model to Amazon Bedrock
+Module 3: Register and Submit Your Model
+
+Module 4: Improving your model
+Creating Better Training Data
+Adjusting Hyperparameters
+Workshop catalog in AWS Builder Center
+AWS AI League - Model customization with Amazon Nova
+Module 4: Improving your model
+AWS AI League - Model customization with Amazon Nova
+Module 4: Improving your model
+Module 4: Improving your model
+Now that you've submitted your first model, it's time to explore how to improve its performance and climb the leaderboard. Success in this competition comes from two complementary approaches: creating better training data and adjusting hyperparameters. While both are important, the quality and diversity of your training data often has the biggest impact on your model's performance.
+
+Tip: Combining both improved dataset quality and optimized hyperparameters leads to the best results. Track your experiments to understand what works!
+Two Paths to Better Performance
+This module is divided into two comprehensive sections to help you systematically improve your model:
+
+Section 1: Creating Better Training Data
+Learn how to curate high-quality, diverse datasets that teach your model to respond effectively. This section covers:
+
+The five pillars of quality data (clarity, relevance, consistency, accuracy, completeness)
+Building dataset diversity across multiple dimensions
+Step-by-step data curation workflow
+Using GenAI tools for data generation
+Common quality issues and how to fix them
+Dataset size recommendations
+Start with Dataset Curation
+
+Section 2: Adjusting Hyperparameters
+Master the art of hyperparameter tuning to optimize how your model learns. This section covers:
+
+Core hyperparameters explained (epochs, learning rate, batch size, LoRA parameters)
+Recommended starting configurations
+Systematic tuning approach
+Troubleshooting common training issues
+Experiment tracking strategies
+Continue to Hyperparameters
+
+Train and Submit Your Improved Model
+Once you've created an improved dataset or adjusted your hyperparameters, it's time to train and submit your new model. Follow these steps to complete the full cycle:
+
+Repeat Step 5 onward, giving the model a new unique name of Module 1 to train another model with your new dataset or hyperparameter settings
+Repeat all steps of Module 2 to deploy another model endpoint with your newly trained model
+Repeat Module 3 to register and submit your new model to the leaderboard
+💡 Tip for Success: Keep track of your changes and results to understand what works best! The hyperparameters section includes a detailed experiment tracking template to help you maintain a systematic record of all your attempts.
+Additional Resources
+To learn more about AWS AI League optimization strategies and best practices, refer to these resources:
+
+Racing beyond DeepRacer: Debut of the AWS LLM League 
+InterVision accelerates AI development using AWS LLM League and Amazon SageMaker AI 
+AWS LLM League sparks AI innovation at AWS Summit Washington, DC 2025 
+My 'Secret Sauce' for the Inaugural Singapore Nationwide AWS Large Language Models League (LLM League) 2024 
+Ready to improve your model? Start with Creating Better Training Data to build a high-quality dataset, then move on to Adjusting Hyperparameters to optimize your training configuration.
+Previous
+Next
+© 2008 - 2026, Amazon Web Services, Inc. or its affiliates. All rights reserved.
+Privacy policy
+Terms of use
+Cookie preferences
+
+
+
+
+------------------
+
+
+Workshop Studio
+
+
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+Module 1: Model Training using Amazon SageMaker AI
+Module 2: Deploy Model to Amazon Bedrock
+Module 3: Register and Submit Your Model
+
+Module 4: Improving your model
+Creating Better Training Data
+Adjusting Hyperparameters
+Workshop catalog in AWS Builder Center
+AWS AI League - Model customization with Amazon Nova
+Module 4: Improving your model
+Creating Better Training Data
+AWS AI League - Model customization with Amazon Nova
+Module 4: Improving your model
+Creating Better Training Data
+Creating Better Training Data
+The foundation of any successful fine-tuning project is high-quality training data. Think of your training data as the textbook your model studies from. Just as a student learns better from a well-written textbook with diverse examples, your model performs better with carefully curated, varied training data.
+
+Build for the challenge you are actually scored on. Read your event's challenge description before you write a single example. Your model is judged against a fixed set of evaluation questions, and a dataset about a different subject will score near zero no matter how clean it is.
+Note: This guide uses Vegas tourism as its running example to demonstrate curation technique. The principles of quality, diversity and consistency apply to any subject, whether you are building a customer service bot, a technical documentation assistant, or a domain expert. Copy the method, not the topic.
+Start by finding out how your model actually fails
+If you already have a deployed model, do this before you write a single new example. It is free, it takes ten minutes, and it does not consume a training run or a deployment slot.
+
+Open your deployment in the Bedrock Playground (Module 2 Step 6) and ask it the kind of questions your challenge is about. Then look for the specific way it is falling short:
+
+Does it answer the wrong subject, or drift off topic?
+Is the format wrong, too long, too short, or inconsistent between similar questions?
+Is the tone off, generic, or robotic?
+What does it do with a question it cannot answer? Does it invent something?
+Whatever you see there is what your dataset needs to demonstrate. Rewriting data without doing this is guessing, and each guess costs you roughly an hour once you retrain, redeploy and wait for a score.
+
+Understanding Supervised Fine-Tuning Data
+Supervised fine-tuning (SFT) teaches your model to respond in specific ways by learning from example conversations. Each training example consists of an instruction or input (what the user asks) and a response or output (how the model should answer). Your data should teach the model to answer the way your challenge rewards: the right subject matter, a consistent voice, and a useful level of detail.
+
+One thing to understand before you start. AWS is explicit that supervised fine-tuning teaches behaviour, not facts:
+
+SFT teaches the model new behaviors, response formats, and reasoning patterns. It does not teach the model new factual knowledge.
+
+So a dataset written to make the model memorise trivia will disappoint you. What moves a score is consistent structure, appropriate tone, sensible length, and sane handling of questions the model cannot answer. Write examples that demonstrate how to answer.
+
+The Five Pillars of Quality Data
+Creating effective training data requires attention to five key principles:
+
+The Five Pillars of Quality Training Data
+1. Clarity - Instructions should be unambiguous and easy to understand
+
+✅ Good: "What are the best pizza places on the Strip?"
+❌ Vague: "Tell me about food"
+2. Relevance - Every example aligns with your use case (Las Vegas tourism)
+
+Stay focused on practical information visitors actually need
+Avoid generic content that doesn't serve your theme
+3. Consistency - Maintain uniform formatting throughout
+
+Use consistent JSON structure
+Keep similar tone and style across all examples
+4. Accuracy - Verify all factual information
+
+Check locations, hours, prices, and recommendations
+Outdated or wrong information teaches your model to be unreliable
+5. Completeness - Responses should be thorough but concise
+
+Aim for 2-4 sentences for most responses
+Provide enough detail to be helpful without overwhelming
+Building Dataset Diversity
+Training a model with limited data diversity is like training for a triathlon by only practicing swimming. You need to practice swimming, biking, AND running to succeed in the actual event. Your dataset needs variety across multiple dimensions to prepare your model for real-world questions.
+
+Dataset Diversity Dimensions
+Question Types:
+
+Factual queries: "What are the operating hours for the Bellagio Conservatory & Botanical Gardens?"
+Opinion/Recommendations: "Which Vegas buffet offers the best value for money?"
+Comparisons: "Should I stay at the Venetian or Bellagio for a luxury experience?"
+Planning: "How should I plan a 4-day Vegas trip with both gambling and non-gambling activities?"
+Practical: "What's the most efficient way to get from Harry Reid International Airport to the Strip?"
+Complexity Levels:
+
+Simple: Single-fact questions
+Moderate: Questions requiring context
+Complex: Multi-part questions or scenarios
+Response Lengths:
+
+Short: 1-2 sentences for quick facts
+Medium: 2-3 sentences for recommendations
+Detailed: 3-4 sentences for complex topics
+Topic Coverage:
+
+Attractions (museums, landmarks, parks)
+Food & dining (restaurants, cuisines, food tours)
+Transportation (Monorail, rideshare, the Deuce, walking)
+Culture & entertainment (resident headliners, Cirque shows, music, art)
+History & architecture
+Neighborhoods & districts
+Practical tips (safety, etiquette, money)
+Seasonal events & activities
+User Personas:
+
+First-time visitors
+Families with children
+Business travelers
+Budget-conscious tourists
+Luxury travelers
+Local experiences seekers
+Target: Aim for 10-15 examples per major category, mixing question formats and varying response styles.
+
+Common Diversity Pitfalls
+Data Curation Workflow
+Follow this systematic six-step approach to create high-quality training data. First, generate your initial dataset using focused, category-specific prompts, or write examples by hand, starting with about 100 examples. Your account already has a Code Editor space with Amazon Q built in for exactly this, covered in Using a GenAI tool to build your dataset below. Second, review each example carefully for accuracy, clarity, and relevance, removing or fixing problematic examples and ensuring proper JSON formatting. Third, enhance diversity by identifying gaps in coverage and creating additional examples to fill them, balancing your dataset across all dimensions while adding personality and Vegas character to responses.
+
+Fourth, check the file before you upload it: every line must be valid JSON on its own, the system prompt must be identical on every row, and no user or system text may contain a reserved string. Fifth, train on that first batch and check your leaderboard score to establish a baseline. Sixth, iterate based on results by analyzing what types of questions your model handles well, identifying weaknesses, expanding successful patterns, and adding more examples in weak areas.
+
+Common Data Quality Issues & Fixes
+Problem: Generic, Wikipedia-Style Responses
+Example: "The Bellagio is a luxury hotel and casino on the Las Vegas Strip. It features 3,950 rooms, a 156,000-square-foot casino, and was inspired by the Lake Como town of Bellagio in Italy."
+
+Fix: Add personality, conversational tone, and practical advice.
+
+Better: "The Bellagio is Vegas luxury at its finest! Don't miss the famous fountain show (best viewed from Paris Las Vegas's Eiffel Tower restaurant around 8 PM for dinner and a show). Inside tip: Check out the Conservatory early morning (before 9 AM) to avoid crowds and get perfect photos. If you're not staying here, at least grab a drink at Petrossian Bar to experience the elegant atmosphere without the high-roller price tag!"
+
+Other common issues include inconsistent formatting (fix by standardizing all entries to match the proper JSON structure), overly long responses (keep most to 2-4 sentences), factual errors (verify all facts before including them), and lack of variety (use diverse prompt templates like "What's the best way to...", "Can you recommend...", "I'm interested in... what should I...", "How do I...", and "What's the difference between...").
+
+How many examples
+Use at least 100 examples. Anything smaller fails during training rather than producing a weak model. AWS recommends at least 200 per task you want the model to learn.
+
+300 to 500 diverse examples is the range where most fine-tuning tasks land, and returns flatten past that unless the quality of what you are adding goes up too. Going much beyond that with similar-looking examples trades generalisation for memorisation, which shows up as a model that is strong on your own questions and weak on the evaluation set.
+
+Grow the dataset deliberately rather than all at once, so you can tell which additions actually moved your score.
+
+Using a GenAI tool to build your dataset
+Building a good dataset is mostly generating, reshaping and checking structured text, which is exactly what a coding agent is good at. You have one in your workshop account already, and two free options outside it.
+
+Option 1: Code Editor in SageMaker Studio
+Your account comes with a Code Editor space called AILeagueDataSetCreator. It is VS Code in the browser with Amazon Q built in, so there is nothing to install and no separate account to create.
+
+From the Studio home page, open Code Editor in the Applications panel.
+
+Code Editor in the Applications panel
+
+Find AILeagueDataSetCreator in the spaces list. If it is not already running, start it, which takes a couple of minutes, then choose Open.
+
+Open the AILeagueDataSetCreator space
+
+The editor opens with no folder loaded. Choose Open Folder, leave the path at /home/sagemaker-user/, which it fills in for you, and choose OK. The editor reloads with your home directory attached.
+
+Open the sagemaker-user home folder
+
+Do this before you open Amazon Q. Without a folder open, Q has nowhere to read or write files, so it cannot create your dataset for you.
+
+With the folder loaded, open Amazon Q from the left activity bar.
+
+Amazon Q in the Code Editor activity bar
+
+Give the panel up to a minute the first time you open it. Code Editor updates its extensions in the background on startup, and while that runs the Q panel can look stuck or briefly show a connection error. If it has not settled after a minute, reload the browser tab. You do not need to sign in separately, since Q authenticates through your workshop account.
+Q opens as a chat panel. Type your request in the box at the bottom, and use @ to point it at a file already in your folder.
+
+The Amazon Q chat panel with the question box highlighted
+
+There are sample prompts in Prompts worth starting from below that you can copy straight into this box (update them to match the use case for your competition, they are written for a Las Vegas theme as an example).
+
+Because the editor runs inside your account, Q can write the .jsonl straight to disk and you can check it in the terminal before you use it.
+
+When the file is ready, download it to your own computer. Right-click it in the Explorer and choose Download....
+
+Right-click a file in the Explorer and choose Download
+
+You need it locally because the dataset upload in Module 1 Step 7 uses your browser's file picker, which reads your computer rather than this volume.
+
+The space keeps its storage between sessions, so anything you saved earlier is still there when you come back to it.
+Option 2: Kiro
+Kiro  is an agentic IDE with a free tier. Install either the CLI or the IDE from the downloads page .
+
+The Kiro Free  tier costs nothing and includes 50 credits per month. Sign in with the same AWS Builder ID you created in Getting Started, and the free tier gives you access to Claude Sonnet 4.5 as well as open weight models, subject to rate limits. Credits do not roll over month to month, and the free tier is not available in GovCloud regions.
+
+Option 3: Amazon Quick
+Amazon Quick  has a Free plan at $0 per user per month that covers chat, in-depth research, and turning conversations into documents and spreadsheets. Choose Try Quick for free on the pricing page  to request an account. The Free plan signs up with an email or social login and does not need an AWS account.
+
+Quick is the better fit if you would rather work conversationally and export a file at the end than sit in an editor.
+
+What to hand the agent
+Whichever you pick, these are the jobs worth delegating rather than doing by hand:
+
+Generate examples by category. Ask for a specific slice at a time, such as twenty questions about Vegas dining with realistic venue names, rather than one prompt for the whole dataset. Narrow prompts produce less repetitive output.
+Convert to the training format. Give it the bedrock-conversation-2024 record from Module 1 Step 6 and ask it to emit your examples in exactly that shape, one JSON object per line.
+Check the file before you upload. Ask it to verify every line parses as JSON, that the system prompt is identical on every row, that the first turn is user and the last is assistant, and that no user or system text contains the reserved strings User:, Bot:, Assistant:, System:, <image>, <video> or [EOS].
+Find the weak spots. Ask it to group your examples by question type and response length and report where coverage is thin. That is the diversity audit from earlier in this page, done in seconds.
+Rewrite flat responses. Paste a generic answer and ask for a version with more character and practical detail, then edit what comes back.
+Prompts worth starting from
+These are examples. Adjust the theme to match whatever challenge you are being scored on, which is in your event description, not necessarily Las Vegas.
+
+Ask for 20 at a time, not the whole dataset in one go. A single long generation starts repeating itself and can truncate without telling you. Five batches of 20 across different topics gets you to the 100 you want, and they will be more varied than 50 from one prompt.
+
+Generate a focused batch
+
+Generate 20 question and answer pairs about Las Vegas dining. Use real venue names. Vary the question wording: some asking for a recommendation, some comparing two options, some practical logistics. Keep answers to 2 to 4 sentences with a specific, useful detail in each.
+
+Convert to the training format
+
+Reformat these into JSONL for Amazon Nova fine-tuning. One JSON object per line, no blank lines, no wrapping array. Each object: {"schemaVersion":"bedrock-conversation-2024","system":[{"text":"YOUR_SYSTEM_PROMPT"}],"messages":[{"role":"user","content":[{"text":"THE_QUESTION"}]},{"role":"assistant","content":[{"text":"THE_ANSWER"}]}]}. Use the identical system prompt on every row.
+
+Check it before uploading
+
+Validate this JSONL file. Report: any line that fails to parse, any row where the system prompt differs from the others, any row whose first turn is not user or last turn is not assistant, and any row whose user or system text contains the strings "User:", "Bot:", "Assistant:", "System:", "[EOS]", or an image or video placeholder tag in angle brackets. List the line numbers.
+
+Audit your coverage
+
+Group these training examples by question type and by answer length, then tell me which categories are thin or missing and write examples to fill the biggest gaps.
+
+Review everything it produces. An agent will happily invent a restaurant, a showtime or a price, and a confidently wrong fact in your training data teaches your model to be confidently wrong. Accuracy is one of the five pillars above, and it is the one generation gets wrong most often.
+Tip: removing empty lines
+Next Step: Once you've created your improved dataset, proceed to Adjusting Hyperparameters to optimize your training configuration.
+Previous
+Next
+© 2008 - 2026, Amazon Web Services, Inc. or its affiliates. All rights reserved.
+Privacy policy
+Terms of use
+Cookie preferences
+
+
+
+----------------------
+
+
+
+Workshop Studio
+
+
+AWS AI League - Model customization with Amazon Nova
+Getting Started
+Module 1: Model Training using Amazon SageMaker AI
+Module 2: Deploy Model to Amazon Bedrock
+Module 3: Register and Submit Your Model
+
+Module 4: Improving your model
+Creating Better Training Data
+Adjusting Hyperparameters
+Workshop catalog in AWS Builder Center
+AWS AI League - Model customization with Amazon Nova
+Module 4: Improving your model
+Adjusting Hyperparameters
+AWS AI League - Model customization with Amazon Nova
+Module 4: Improving your model
+Adjusting Hyperparameters
+Adjusting Hyperparameters
+Your data decides what the model learns. Hyperparameters decide how it learns. Same dataset, different settings, very different results.
+
+Do this section after you have a baseline score on the board, and after you have improved your dataset. Tuning a weak dataset is wasted effort, so start with Dataset Curation.
+
+Budget your time before you start
+Every experiment is a full round trip: 20 to 25 minutes training, 10 to 15 minutes deployment, then up to 15 minutes for the leaderboard to score it. Call it an hour per attempt, and you can only run 2 training jobs at once.
+
+So plan for three or four deliberate experiments, not twenty. Pick the changes below in order and stop when you run out of clock.
+
+Where these settings live
+Module 1 Step 12 walks through the customization screen and the hyperparameter fields. Two things worth remembering from it:
+
+MLflow Resource is under Advanced options, it is required, and the job fails if the tracking server is still Creating.
+Sequence length and Training type sit near the top of the form, separate from the numeric hyperparameter fields.
+Watch what training actually did
+The leaderboard tells you whether a model scored. It does not tell you why. That is what MLflow is for, and it is the field you already filled in.
+
+Open your MLflow tracking server from SageMaker Studio and select the run matching your training job. Look at the training loss curve:
+
+Falling steadily and still falling at the end. The model was still learning. More epochs or a higher learning rate should help.
+Flat or barely moving. Nothing is being learned. Learning rate is too low, or warmup consumed the whole run. See the warmup note below.
+Jumping around or spiking. Learning rate is too high. Cut it.
+Falling fast then flattening early. It converged. Extra epochs from here mostly risk memorisation.
+Check this before you change anything. Guessing from a leaderboard score alone wastes an hour per guess.
+
+The fields you can change
+Console field	Default	Console accepts	Worth knowing
+Batch size	64	64, 128, 256, 512, 1024	64 is the minimum, and lower means more steps
+Number of epochs	2	1 to 100	AWS recommends 5 or fewer, though higher runs fine
+Learning rate	0.00001	0 to 1	keep it between 1e-6 and 1e-4
+Minimum learning rate	0.000001	1e-7 to 1	must be lower than Learning rate
+Warmup steps	10	0 to 100	see the warning below, 10 is too high for a small dataset
+Alpha value	128	32, 64, 96, 128, 160, 192	those six values only
+Learning rate ratio	16	1 to 70	optional, leave it alone until other levers are exhausted
+Maximum Context Length	8192	1 to 131072	keep it on a 1024 multiple, and 8192 is already generous
+The console's ranges are wider than AWS's recommendations. Epochs will accept 100 and the job will run. Nothing stops you, so the cost of an extreme value is wasted time and a memorised dataset rather than a rejected job.
+Understand this before you tune anything
+Supervised fine-tuning teaches the model behaviour: how to structure an answer, what tone to take, what format to follow, when to decline. AWS states it plainly:
+
+SFT teaches the model new behaviors, response formats, and reasoning patterns. It does not teach the model new factual knowledge.
+
+A dataset built to make the model recite facts will score poorly no matter how you tune it, and no setting on this page fixes that. What wins is consistent, well-structured, correctly-toned responses.
+
+Watch out for warmup on a small dataset
+Warmup is counted in optimiser steps, not examples, and a small dataset produces very few steps. Batch size cannot go below 64, so with 200 rows each epoch is 4 steps and two epochs is 8 steps total. The default warmup of 10 is longer than the entire run, and AWS warns about exactly this:
+
+We recommend that you avoid a large warm up value when the training sample is small because the learning rate might never reach the set value during the training process.
+
+AWS sizes warmup as dataset rows divided by 640 for Nova Micro, which for any dataset you will build here rounds down to the minimum. If your dataset is a few hundred rows, set Warmup steps to 1 or 2. Leaving it at 10 can mean your learning rate never arrives, which makes every other change on this page look like it did nothing.
+
+A defensible first experiment
+If you want one configuration to start from rather than a menu, use this on a dataset of a few hundred rows, then change one thing at a time from here.
+
+Field	Value	Why
+Warmup steps	1	so the learning rate actually reaches its target
+Learning rate	0.00005 (5e-5)	AWS's recommended rate for LoRA, five times the console default
+Minimum learning rate	0.000001 (1e-6)	default, and safely below the rate above
+Number of epochs	3	small datasets need more passes, and 5 is AWS's recommended ceiling
+Batch size	64	the minimum the console allows, so the most steps
+Alpha value	128	keep the default until you have a reason
+Maximum Context Length	8192	default, far more than a question and answer needs
+What to change, in order
+1. Your dataset. Not on this page, and still the largest lever by a wide margin. Go to Dataset Curation first.
+
+2. Warmup steps. Cheap, and it gates whether anything else you change has an effect. See above.
+
+3. Learning rate. The default 1e-5 is conservative. AWS recommends 5e-5 for LoRA. If MLflow shows loss jumping around, go down to 5e-6 instead. Stay within 1e-6 to 1e-4.
+
+4. Number of epochs, which is your only real control over step count. Batch size cannot go below 64, so a small dataset produces very few optimiser steps per epoch: 52 rows is 1 step, 200 rows is 4, 500 rows is 8. Total steps is that number times your epochs, and a model cannot learn much in 3 steps.
+
+Default is 2. AWS notes that smaller datasets need more epochs to converge and larger datasets need fewer, which is exactly this effect. On a couple of hundred rows, 3 to 5 is reasonable. On a very small set you may need more to get any steps at all, though you are then trading generalisation for memorisation. Growing the dataset is the better fix when you have the option.
+
+5. Leave Batch size at 64. It is the lowest value the console offers, and lower means more updates from the same data. The other options go upward (128, 256, 512, 1024) and every one of them reduces your step count, which is the opposite of what a small dataset needs.
+
+6. Alpha value. Default 128. Higher lets the adapter pull the model further from its base behaviour. If tuning barely registered, try 160 or 192. If output went incoherent, drop to 64. Use only the six allowed values.
+
+7. Leave Maximum Context Length and Sequence length alone. 8192 tokens is far more than a question and answer pair needs. Raising either costs training time without improving anything, unless your records are genuinely long.
+
+Minimum learning rate must stay below Learning rate. If you lower Learning rate to 1e-6, the default floor of 1e-6 is no longer below it and the job can be rejected.
+Keep a log
+Change one thing per run, and write down what it did. Otherwise an hour buys you nothing.
+
+Track: dataset version and row count, then Epochs, Learning rate, Minimum learning rate, Batch size, Alpha value, Warmup steps, your leaderboard score, and one line on what you observed in the MLflow loss curve.
+
+A worked sequence looks like: baseline on defaults, then dataset improvements holding everything else still, then warmup down to 1, then learning rate to 5e-5, then epochs to 3. Five runs, each isolating one change, each recorded.
+
+Compare runs by their difference, not their absolute score. A change that moves you by less than the gap you have seen between two identical configurations is noise, so run your baseline twice early on to learn what that gap is for your setup.
+
+When something goes wrong
+The job fails as soon as I submit
+Barely any change from the base model
+Strong on my training questions, weak on new ones
+Inconsistent or erratic answers
+Score will not move no matter what I change
+I cannot start another training job or deployment
+Reference
+Fine-tune Nova 1.0  for the recipe configuration and every limit quoted here
+Preparing data for fine-tuning  for dataset format and constraints
+Hyperparameters for Understanding models  for epoch, learning rate and warmup guidance
+Previous
+© 2008 - 2026, Amazon Web Services, Inc. or its affiliates. All rights reserved.
+Privacy policy
+Terms of use
+Cookie preferences
