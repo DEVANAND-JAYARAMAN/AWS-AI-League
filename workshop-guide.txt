@@ -1,12 +1,13 @@
 Workshop Studio
 
+https://catalog.us-east-1.prod.workshops.aws/workshops/7b1ff883-8e44-4e7f-9e2d-cee9ee291b3b/en-US
+
 
 AWS AI League - Model customization with Amazon Nova
 Getting Started
 Module 1: Model Training using Amazon SageMaker AI
 Module 2: Deploy Model to Amazon Bedrock
 Module 3: Register and Submit Your Model
-
 Module 4: Improving your model
 Workshop catalog in AWS Builder Center
 AWS AI League - Model customization with Amazon Nova
